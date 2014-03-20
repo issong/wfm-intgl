@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.integration.appointment2intgl.provider.dao.intgl.WMAppointmentProviderDao" >
+
+  <!-- 
+    - 360 에서 보낸 예약결과를 조회합니다.
+    -->
+  <select id="selectWMAppointmentOffer" parameterType="string" resultType="WMAppointmentOfferParam">
+		SELECT
+			REQUEST_ID          as appointmentRequestId           
+			, OFFER_ID            as offerId            
+			, OFFER_START_DT      as offerStartDt      
+			, OFFER_END_DT        as offerEndDt        
+			, OFFER_VALUE         as offerValue          
+			, AVAILABLE           as available            
+			, REASON_TYPE_NAME    as reasonType     
+		FROM
+		    TB_WM_APPOINTMENTOFFER
+		WHERE
+		    REQUEST_ID = #{appointmentRequestId}
+		    AND SEND_DT IS NULL
+		ORDER BY
+			EVENT_ID, REQUEST_ID, OFFER_START_DT
+  </select>
+  
+  <!-- 
+    - 360 에서 보낸 예약결과를 저장합니다.
+    -->
+  <insert id="insertAppointmentOffer" parameterType="WMAppointmentOfferParamVo">
+		INSERT INTO TB_WM_APPOINTMENTOFFER (
+			EVENT_ID       	
+			, REQUEST_ID      
+			, OFFER_ID         
+			, OFFER_START_DT   
+			, OFFER_END_DT     
+			, OFFER_VALUE     
+			, AVAILABLE       
+			, REASON_TYPE_CD   
+			, REASON_TYPE_NAME
+		)
+		VALUES (
+			#{eventId, jdbcType=INTEGER}
+			, #{appointmentRequestId, jdbcType=VARCHAR}
+			, #{offerId, jdbcType=VARCHAR}        
+			, #{offerStartDt, jdbcType=VARCHAR}  
+			, #{offerEndDt, jdbcType=VARCHAR}    
+			, #{offerValue, jdbcType=VARCHAR}     
+			, #{available, jdbcType=VARCHAR}       
+			, #{reasonType, jdbcType=VARCHAR}
+			, (SELECT DESCRIPTION FROM TB_WM_MAPPINGREASONTYPE WHERE ID = #{reasonType})    	
+		)
+  </insert>  
+
+  <!-- 
+    - ICIS 로 보낸 예약결과를 update 합니다.
+    -->
+  <update id="updateAppointmentOffer" parameterType="WMAppointmentOfferParam">
+		UPDATE TB_WM_APPOINTMENTOFFER 
+			SET
+			<if test="slotId != null">
+			    SLOT_ID = #{slotId} ,
+			</if>
+			    SEND_DT = LOCALTIMESTAMP(6)
+		WHERE
+			REQUEST_ID = #{appointmentRequestId}
+			AND OFFER_ID = #{offerId}
+			AND SEND_DT IS NULL
+  </update>   
+
+  <!-- 
+    - 360 에서 보낸 예약결과를 삭제합니다.
+    -->  
+  <delete id="deleteAppointmentOffer" parameterType="string">
+		DELETE FROM TB_WM_APPOINTMENTOFFER 
+		WHERE
+			REQUEST_ID = #{appointmentRequestId}
+			AND SEND_DT IS NULL
+  </delete>   
+
+  <!-- 
+    - 예약오더의 reasontype 코드항목을 조회합니다
+    -->    
+  <select id="selectWMMappingReasonType" resultType="WMMappingReasonTypeVo">
+        SELECT 
+            ID as reasonTypeId
+            , DESCRIPTION as description
+            , EXPLANATION as explanation
+        FROM TB_WM_MAPPINGREASONTYPE      
+  </select>
+</mapper>
+
+

@@ -1,0 +1,19 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import java.util.ArrayList;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.Rules._Rules;
+
+// NeOSS-WM에서 Custom Excpetion 발생 시 이를 360으로 전송하고, 360에서는 전송결과(성공/실패)를 리턴하는 인터페이스
+rule "intgl_rule_vs90"
+	dialect "java"
+	no-loop
+	when
+		drlList : ArrayList()
+	then
+		drlList.add(_Rules.CustomException);
+		drlList.add(_Rules.CustomExceptionData);
+		drlList.add(_Rules.ActivityStatus);
+		drlList.add(_Rules.InputReference);
+        update(drlList);
+end

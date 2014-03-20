@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.datamapper.dao.bt360.DataMapper360Dao" >
+
+	<select id="selectRamResource" parameterType="RamResourceObjectVo" resultType="RamResourceObjectVo"> 
+		SELECT
+			RAM_LOCATION_ID_START as ramLocationIdStart,
+			RAM_LOCATION_ID_END as ramLocationIdEnd,
+			COST_KM as costKm,
+			UTILISATION as utilisation,
+			RAM_RULE_COLLECTION_ID as ramRuleCollectionId,
+			OUT_OF_REGION_MULTIPLIER as outOfRegionMultiplier
+		FROM RAM_RESOURCE
+		WHERE DATASET_ID = #{datasetId} 
+		AND ID = #{id}
+		AND DELETED = '0'
+	</select>
+
+	<select id="selectRamResourceDivision" parameterType="RamResourceObjectVo" resultType="RamResourceObjectVo"> 
+		SELECT
+			ORGANISATION_ID as organisationId,
+			DATASET_ID as datasetId,
+			RAM_DIVISION_ID as ramDivisionId,
+			RAM_RESOURCE_ID as ramResourceId,
+			WITHIN_REGION_MULTIPLIER as withinRegionMultiplier,
+			RAM_UPDATE_ID as ramUpdateId,
+			DELETED	as deleted
+		FROM RAM_RESOURCE_DIVISION 
+		WHERE DATASET_ID = #{datasetId} 
+		AND RAM_RESOURCE_ID = #{ramResourceId}
+		<if test="ramDivisionIdList != null">
+			AND RAM_DIVISION_ID IN
+			<foreach item="item" index="index" collection="ramDivisionIdList" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		AND DELETED = '0'
+	</select>
+
+	<select id="selectActivitySla" parameterType="ActivitySlaObjectVo" resultType="ActivitySlaObjectVo"> 
+		SELECT
+			SLA_TYPE_ID as slaTypeId
+		FROM ACTIVITY_SLA
+		WHERE DATASET_ID = #{datasetId}
+		AND ACTIVITY_ID = #{activityId}
+		AND DELETE_FLAG = '0'
+		GROUP BY SLA_TYPE_ID
+	</select>
+
+</mapper>

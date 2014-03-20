@@ -1,0 +1,200 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentCancel;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMCustomException;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrderKey;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrderStatus;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.ObjectDeletion;
+
+// vstype == 5 이면..
+// odrNum 값이 있을 경우만 해당 Schema 생성
+// Object_Type_id : Default 값으로 'Activity' 설정
+// Object_pk1 : if [worktype] == 1 then [odrNum]  매핑 
+//              if [worktype] == 2 then [ttId]  매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+rule "VS5_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity");
+		objectDeletion.setObjectPk1(("1".equals(order.getWorkType()))? order.getOdrNum() : order.getTtId());
+		objectDeletion.setObjectPkName1("id");
+        update(objectDeletion);
+end
+
+// vstype == 6B 이면
+// Object_Type_id : Default 값으로 'Activity' 설정
+// Object_pk1 : [appointmentRequestId] 매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+rule "VS6B_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6B)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity");
+		objectDeletion.setObjectPk1(intglVo.getAppointmentRequestId());
+		objectDeletion.setObjectPkName1("id");
+        update(objectDeletion);
+end
+
+// vstype == 6C이면
+// Object_Type_id : Default 값으로 'Activity 설정
+// Object_pk1 : [appointmentRequestId] 매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+rule "VS6C_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity");
+		objectDeletion.setObjectPk1(intglVo.getAppointmentRequestId());
+		objectDeletion.setObjectPkName1("id");
+        update(objectDeletion);
+end
+
+// vstype == 6D 이면..
+// Object_Type_id : Default 값으로 'Activity' 설정
+// Object_pk1 : [appointmentRequestId] 매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+rule "VS6D_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6D)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity");
+		objectDeletion.setObjectPk1(intglVo.getAppointmentRequestId());
+		objectDeletion.setObjectPkName1("id");
+        update(objectDeletion);
+end
+
+// vstype == 7B 이면..
+// Object_Type_id : Default 값으로 'Custom_Exception' 설정
+// Object_pk1 : [workOdrNum ] 매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+// Object_pk2 : [workOdrNum ] 매핑
+// Object_pk_name2 : Default 값으로 'activity_id' 설정
+rule "VS7B_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7B)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Custom_Exception");
+		objectDeletion.setObjectPk1(order.getWorkOdrNum());
+		objectDeletion.setObjectPkName1("id");
+		objectDeletion.setObjectPk2(order.getWorkOdrNum());
+		objectDeletion.setObjectPkName2("activity_id");
+        update(objectDeletion);
+end
+
+// vstype == 8 이면..
+// Object_Type_id : Default 값으로 'Activity' 설정
+// Object_pk1 : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+// Object_pk2 : Default 값으로 '' 설정
+// Object_pk_name2 : Default 값으로 '' 설정
+// Object_pk3 : Default 값으로 '' 설정
+// Object_pk_name3 : Default 값으로 '' 설정
+// Object_pk4 : Default 값으로 '' 설정
+// Object_pk_name4 : Default 값으로 '' 설정
+rule "VS8_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderKey()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS8)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity");
+		objectDeletion.setObjectPk1(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		objectDeletion.setObjectPkName1("id");
+		objectDeletion.setObjectPk2("");
+		objectDeletion.setObjectPkName2("");
+		objectDeletion.setObjectPk3("");
+		objectDeletion.setObjectPkName3("");
+		objectDeletion.setObjectPk4("");
+		objectDeletion.setObjectPkName4("");
+        update(objectDeletion);
+end
+
+// vstype == 10 이고 int == 0 이면..
+// odrNum 값이 있을 경우만 해당 Schema 생성
+// Object_Type_id : Default 값으로 'Activity' 설정
+// Object_pk1 : [odrNum] 매핑
+// Object_pk_name1 : Default 값으로 'id' 설정
+rule "VS10_ObjectDeletion1"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		i : Integer(intValue() == 0)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity");
+		objectDeletion.setObjectPk1(("1".equals(order.getWorkType()))? order.getOdrNum() : order.getTtId());
+		objectDeletion.setObjectPkName1("id");
+        update(objectDeletion);
+end
+
+// vstype == 10 이고 int == 1 이면..
+// Object_Type_id : Default 값으로 'Activity_SLA' 설정
+// Object_pk1 : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// Object_pk_name1 : Default 값으로 'activity_id' 설정
+// Object_pk2 : 쿼리결과의 [sla_type_id] 매핑
+// Object_pk_name2 : Default 값으로 'sla_type_id' 설정
+rule "VS10_ObjectDeletion2"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		i : Integer(intValue() == 1)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		rulesVo : RulesVo()
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Activity_SLA");
+		objectDeletion.setObjectPk1(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		objectDeletion.setObjectPkName1("activity_id");
+		objectDeletion.setObjectPk2(rulesVo.getSlaTypeId());
+		objectDeletion.setObjectPkName2("sla_type_id");
+        update(objectDeletion);
+end
+
+// vstype == 91 이면
+// Object_Type_id : Default 값으로 'Custom_Exception' 설정
+// Object_pk1 : if [workerId] <> '' then [workerId] + [bt360ExceptionType] 매핑 else [worktype] + [officeScode] + [workOdrNum ] + [bt360ExceptionType] 매핑 end if
+// Object_pk_name1 : Default 값으로 'id' 설정
+rule "VS91_ObjectDeletion"
+	dialect "java"
+	no-loop
+	when
+		order : WMCustomException()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS91)
+		objectDeletion : ObjectDeletion()
+	then
+		objectDeletion.setObjectTypeId("Custom_Exception");
+		objectDeletion.setObjectPk1(StringUtil.isNotEmpty(order.getWorkerId())? order.getWorkerId() + order.getBt360ExceptionType() : order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum() + order.getBt360ExceptionType());
+		objectDeletion.setObjectPkName1("id");
+        update(objectDeletion);
+end

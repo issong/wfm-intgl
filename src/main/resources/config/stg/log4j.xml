@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+
+	<!-- ============================== -->
+	<!-- Append messages to the console -->
+	<!-- ============================== -->
+
+	<!-- KT Transaction Log -->
+	<appender name="KT_TX_LOG" class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="${logging.directory}/Tx.log"/>
+		<param name="Threshold" value="INFO"/>
+		<param name="Append" value="true"/>
+		<layout class="com.kt.log4kt.layout.TransactionLogLayout">
+			<param name="DatePattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS}"/>
+			<param name="AutoFill" value="false"/>
+		</layout>
+
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="INFO"/>
+			<param name="LevelMax" value="INFO"/>
+			<param name="AcceptOnMatch" value="true"/>
+		</filter>
+	</appender>
+
+	<!-- KT Error Log -->
+	<appender name="KT_ERROR_LOG" class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="${logging.directory}/Error.log"/>
+		<param name="Threshold" value="ERROR"/>
+		<param name="Append" value="true"/>
+		<layout class="com.kt.log4kt.layout.ErrorLogLayout">
+			<param name="DatePattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS}"/>
+			<param name="AutoFill" value="true"/>
+			<param name="AllowStackTrace" value="true"/>
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="ERROR"/>
+			<param name="LevelMax" value="FATAL"/>
+			<param name="AcceptOnMatch" value="true"/>
+		</filter>
+	</appender>
+
+	<!-- KT Debug Log -->
+	<appender name="KT_DEBUG_LOG" class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="${logging.directory}/Debug.log"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="com.kt.log4kt.layout.DebugLogLayout">
+			<param name="DatePattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS}"/>
+			<param name="AutoFill" value="true"/>
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="DEBUG"/>
+			<param name="LevelMax" value="FATAL"/>
+			<param name="AcceptOnMatch" value="true"/>
+		</filter>
+	</appender>
+
+	<!-- File Log -->
+	<appender name="KT_PILOT_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${logging.directory}/kt-log.log"/>
+		<param name="Threshold" value="DEBUG"/>
+		<param name="Append" value="true"/>
+		<param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] [%5p] [%c{1}.%M():%L] - %m%n"/>
+		</layout>
+	</appender>
+
+	<!-- Console Log -->
+	<appender name="KT_PILOT_CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.out"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] [%5p] [%c{1}.%M():%L] - %m%n"/>
+		</layout>
+	</appender>
+
+	<!-- =========================== -->
+	<!--      Logger Definition      -->
+	<!-- =========================== -->
+
+	<!-- KT Transaction Logger -->
+	<logger name="TRANSACTION_LOGGER" additivity="false">
+		<level value="INFO"/>
+		<appender-ref ref="KT_TX_LOG"/>
+	</logger>
+
+	<!-- KT Error Logger -->
+	<logger name="ERROR_LOGGER" additivity="false">
+		<level value="ERROR"/>
+		<appender-ref ref="KT_ERROR_LOG"/>
+	</logger>
+
+	<!-- KT Debug Logger -->
+	<logger name="DEBUG_LOGGER" additivity="false">
+		<level value="DEBUG"/>
+		<appender-ref ref="KT_DEBUG_LOG"/>
+	</logger>
+
+	<!-- =========================== -->
+	<!--      Limit categories       -->
+	<!-- =========================== -->
+
+	<category name="com.kt.framework">
+		<priority value="DEBUG"/>
+	</category>
+
+	<category name="org.springframework">
+		<priority value="WARN"/>
+	</category>
+<!--  
+	<category name="websquare">
+		<priority value="WARN"/>
+	</category>
+-->
+	<category name="java.sql.Connection">
+		<priority value="DEBUG"/>
+	</category>
+
+	<category name="java.sql.PreparedStatement">
+		<priority value="DEBUG"/>
+	</category>
+
+	<category name="java.sql.ResultSet">
+		<priority value="DEBUG"/>
+	</category>
+
+	<category name="java.sql.Statement">
+		<priority value="DEBUG"/>
+	</category>
+
+	<category name="org.mybatis">
+		<priority value="DEBUG"/>
+	</category>
+
+	<category name="com.kt.oss.wmIntgl">
+		<priority value="DEBUG"/>
+	</category>
+	
+	<!-- ======================= -->
+	<!-- Setup the Root category -->
+	<!-- ======================= -->
+
+	<root>
+ 		<appender-ref ref="KT_PILOT_FILE"/> 
+	</root>
+
+</log4j:configuration>

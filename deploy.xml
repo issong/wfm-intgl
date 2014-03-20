@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="wfm-intgl" default="init" basedir="." >
+	<tstamp>
+		<format property="YMDHH24MI" pattern="yyyyMMddHHmm"/>
+	</tstamp>
+	
+	<hostinfo/>
+	<!--
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="./ant-contrib-1.0b3.jar"/>
+		</classpath>
+	</taskdef>	
+	-->
+	<target name="init">
+		<property file="${basedir}/build.properties" />
+		<echo>project name == ${project.name}</echo>
+		<echo>base dir == ${basedir}</echo>
+		<echo>java home == ${java.home}</echo>
+		<echo>deploy path == ${common.deploy.dir}</echo>	
+		<echo>webapps path == ${common.webapps.dir}</echo>
+		<echo>jboss home path == ${jboss.home.dir}</echo>
+		<echo>HostName == ${NAME}</echo>
+		<echo>Host Ip == ${ADDR4}</echo>
+		<echo>Revision == ${revision}</echo>
+		<echo>Env Type == ${envtype}</echo>
+	</target>
+	
+	<target name="checkJboss" depends="init">
+        <echo>+-----------------------------+</echo>
+        <echo>| C H E C K I N G   J B O S S </echo>
+        <echo>| SERVER : ${host.ip}         </echo>
+        <echo>+-----------------------------+</echo>
+        <echo></echo>
+		<condition property="jboss.running">
+			<and>
+				<http url="http://${host.ip}:${common.host.port}/"/>
+			</and>
+		</condition>
+		<echo>JBoss is already running on ${host.ip}:${common.host.port} - [${jboss.running}]</echo>
+	</target>
+
+	<target name="stopJboss">
+        <echo>+-----------------------------+</echo>
+        <echo>| S T O P P I N G   J B O S S </echo>
+        <echo>| SERVER : ${host.ip}         </echo>
+		<echo>| BIN : ${bin.dir}         </echo>
+        <echo>| CMD : ${stop.cmd}         </echo>
+        <echo>+-----------------------------+</echo>
+        <echo></echo>
+        <echo>This will take some time, possibly up to a minute.</echo>
+        <echo></echo>	
+
+		<exec executable="/bin/bash" dir="${bin.dir}" failonerror="true">
+		     <arg value="-c" />
+		     <arg value="${stop.cmd}" />
+		</exec>		
+	</target>
+	
+	<target name="startJboss">
+        <echo>+-----------------------------+</echo>
+        <echo>| S T A R T I N G   J B O S S </echo>
+        <echo>| SERVER : ${host.ip}         </echo>
+		<echo>| BIN : ${bin.dir}         </echo>
+        <echo>| CMD : ${start.cmd}         </echo>		
+        <echo>+-----------------------------+</echo>
+        <echo></echo>
+        <echo>This will take some time, possibly up to a minute.</echo>
+        <echo></echo>	
+        
+		<exec executable="/bin/bash" dir="${bin.dir}" failonerror="true">
+		     <arg value="-c" />
+		     <arg value="${start.cmd}" />
+		</exec>			
+		<!--
+		<waitfor maxwait="120" maxwaitunit="second" checkevery="3" checkeveryunit="second">
+			<http url="http://${host.ip}:${common.host.port}/wfm-intgl/"/>
+		</waitfor>
+		-->
+	</target>
+	
+	<target name="backupWebapps">
+        <echo>+-----------------------------+</echo>
+        <echo>| BACKUP WAR                  </echo>
+        <echo>| ${common.backup.dir}/webapps_${revision}_${YMDHH24MI}.tar.gz</echo>
+        <echo>+-----------------------------+</echo>
+        <echo></echo>
+		<tar longfile="gnu" compression="gzip" destfile="${common.backup.dir}/webapps_${revision}_${YMDHH24MI}.tar.gz" basedir="${common.webapps.dir}"/>
+	</target>		
+	
+	<target name="cleanWebapps">
+        <echo>+-----------------------------+</echo>
+        <echo>| CLEAN WEBAPPS DIRECTORY      </echo>
+        <echo>| ${common.webapps.dir}</echo>
+        <echo>+-----------------------------+</echo>
+        <echo></echo>
+		<delete includeEmptyDirs="true">
+			<fileset dir="${common.webapps.dir}" includes="**/*" defaultexcludes="false"/>
+		</delete>		
+	</target>
+	
+	<target name="getWar">
+        <echo>+-----------------------------+</echo>
+        <echo>| FTP GET WAR FILE            +</echo>
+        <echo>+-----------------------------+</echo>
+        <echo></echo>
+		<scp file="${dev.user.id}:${dev.user.pass}@${dev.host.ip}:${common.war.dir}-${envtype}/target/*.war"
+			todir="${common.deploy.dir}" 
+			password="${dev.user.pass}" trust="true"/>
+	</target>
+	
+	<target name="distWebapps">
+        <echo>+-----------------------------+</echo>
+        <echo>| INSTALL WAR FILE            +</echo>
+        <echo>+-----------------------------+</echo>
+        <echo></echo>		
+		<unjar dest="${common.webapps.dir}">
+			<fileset dir="${common.deploy.dir}" includes="*.war"/>
+		</unjar>
+		<delete includeEmptyDirs="true">
+			<fileset dir="${common.deploy.dir}" includes="**/*.war" defaultexcludes="false"/>
+		</delete>			
+	</target>
+	
+	<target name="deploy" depends="init">
+		<record name="${common.deploylog.dir}/${YMDHH24MI}.log" action="start" loglevel="verbose"/>
+		<sequential>
+			<antcall target="stopJboss">
+				<param name="host.ip" value="${ADDR4}"/>
+				<param name="bin.dir" value="${jboss.bin.dir}"/>
+				<param name="stop.cmd" value="${jboss.stop.cmd}"/>				
+			</antcall>
+			<antcall target="stopJboss">
+				<param name="host.ip" value="${ADDR4}"/>
+				<param name="bin.dir" value="${jbossSub.bin.dir}"/>
+				<param name="stop.cmd" value="${jbossSub.stop.cmd}"/>				
+			</antcall>
+			<antcall target="backupWebapps"/>
+			<antcall target="cleanWebapps"/>
+			<antcall target="getWar"/>
+			<antcall target="distWebapps"/>
+			
+			<antcall target="startJboss">
+				<param name="host.ip" value="${ADDR4}"/>
+				<param name="bin.dir" value="${jboss.bin.dir}"/>
+				<param name="start.cmd" value="${jboss.start.cmd}"/>
+			</antcall>
+			<antcall target="startJboss">
+				<param name="host.ip" value="${ADDR4}"/>
+				<param name="bin.dir" value="${jbossSub.bin.dir}"/>
+				<param name="start.cmd" value="${jbossSub.start.cmd}"/>
+			</antcall>
+		</sequential>
+		<record name="${common.deploylog.dir}/${YMDHH24MI}.log" action="stop" loglevel="verbose"/>
+	</target>
+	<!--
+	<macrodef name="start">
+		<sequential>
+			<trycatch>
+				<try>
+					<if>
+						<not>
+							<http url="http://${host.ip}:${common.host.port}/wfm-intgl/"/>
+						</not>
+						<then>
+							<antcall target="startJboss">
+								<param name="host.ip" value="${ADDR4}"/>
+							</antcall>
+							<waitfor maxwait="120" maxwaitunit="second" checkevery="3" checkeveryunit="second">
+								<http url="http://${host.ip}:${common.host.port}/wfm-intgl/"/>
+							</waitfor>
+							<echo message="++++JBoss started" />
+						</then>
+						<else>
+							<echo message="++++JBoss already started..." />
+						</else>
+					</if>
+				</try>
+				<catch>
+					<echo message="++++Unable to start JBoss"/>
+				</catch>
+			</trycatch>
+		</sequential>
+	</macrodef>	
+	-->
+</project>

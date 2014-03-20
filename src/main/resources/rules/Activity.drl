@@ -1,0 +1,237 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.common.utils.ConversionUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.Activity;
+
+// vstype == 1 이면..
+// id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// activity_class_id : Default 값으로 'CALL' 설정
+// activity_type_id : [workType], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+// description : 국사코드 lookup table에서 [officeScode] +"_"+[workTeamCode]를 key로 국사명 매핑 + "/" + [custName] + "/"  + [contactTelNum]  매핑
+// date_time_created : Default 값으로 I/L 시스템 시간 설정
+// date_time_open : [rcvDt] 매핑
+// external_ref : case when [workType] = 1 then [workOdrTypeCode] + "-" + [svcId] 
+//				  else  
+//					   case when [svcMainClsCode] = 1000 then "PS" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 3000 then "AD" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 9000 then "VO" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = IPM0 then "MT" + "-" + [svcId] 
+//				  end
+// do_on_location_incentive : [concurrentOdrFlag] -1이면 -1 아니면 1 설정
+// priority : Default 값으로 5 설정
+// service_level : left(addrEtc, 64) 매핑
+// split_allowed : Default 값으로 false 설정
+// do_on_site : Default 값으로 false 설정
+// interrupt : Default 값으로 false 설정
+// cost_of_split : Default 값으로 0.0 설정
+rule "VS1_Activity"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activity : Activity()
+	then
+		activity.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activity.setActivityClassId("CALL");
+		activity.setActivityTypeId(rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activity.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+		activity.setDescription(rulesDB.selectOfficeName(order.getOfficeScode() + "_" + order.getWorkTeamCode()) + "/" + order.getCustName() + "/" + order.getContactTelNum());
+		activity.setDateTimeCreated(ConversionUtil.getXMLGregorianCalendar());
+		activity.setDateTimeOpen(order.getRcvDt());
+		activity.setExternalRef(rulesVo.getExternalRef());
+		activity.setDoOnLocationIncentive(Double.valueOf((order.getConcurrentOdrFlag() == -1)? -1 : 1));
+		activity.setPriority(5); // set default value
+		activity.setServiceLevel(StringUtil.leftstring(order.getAddrEtc(), 64));
+        update(activity);
+end
+
+// vstype == 5 이면..
+// id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// activity_class_id : Default 값으로 'CALL' 설정
+// activity_type_id : [workType], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+// description : 국사코드 lookup table에서 [officeScode] +"_"+[workTeamCode]를 key로 국사명 매핑 + "/" + [custName] + "/"  + [contactTelNum]  매핑
+// date_time_created : Default 값으로 I/L 시스템 시간 설정
+// date_time_open : [rcvDt] 매핑
+// external_ref : case when [workType] = 1 then [workOdrTypeCode] + "-" + [svcId] 
+//				  else  
+//					   case when [svcMainClsCode] = 1000 then "PS" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 3000 then "AD" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 9000 then "VO" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = IPM0 then "MT" + "-" + [svcId] 
+//				  end
+// do_on_location_incentive : [concurrentOdrFlag] -1이면 -1 아니면 1 설정
+// priority : Default 값으로 5 설정
+// service_level : left(addrEtc, 64) 매핑
+// split_allowed : Default 값으로 false 설정
+// do_on_site : Default 값으로 false 설정
+// interrupt : Default 값으로 false 설정
+// cost_of_split : Default 값으로 0.0 설정
+rule "VS5_Activity"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activity : Activity()
+	then
+		activity.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activity.setActivityClassId("CALL");
+		activity.setActivityTypeId(rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activity.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+		activity.setDescription(rulesDB.selectOfficeName(order.getOfficeScode() + "_" + order.getWorkTeamCode()) + "/" + order.getCustName() + "/" + order.getContactTelNum());
+		activity.setDateTimeCreated(ConversionUtil.getXMLGregorianCalendar());
+		activity.setDateTimeOpen(order.getRcvDt());
+		activity.setExternalRef(rulesVo.getExternalRef());
+		activity.setDoOnLocationIncentive(Double.valueOf((order.getConcurrentOdrFlag() == -1)? -1 : 1));
+		activity.setPriority(5); // set default value
+		activity.setServiceLevel(StringUtil.leftstring(order.getAddrEtc(), 64));
+        update(activity);
+end
+
+// vstype == 6 이면..
+// id : [appointmentRequestId] 매핑
+// activity_class_id : Default 값으로 'CALL' 설정
+// activity_type_id : [workType], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+// description : [custName] + "/"  + [contactTelNum]  매핑 (001020310000(12자리)  형식을 -> 010-2031-0000 형식으로 변환)
+// date_time_created : Default 값으로 I/L 시스템 시간 설정
+// date_time_open : [rcvDt] 매핑
+// external_ref : [svcId]  (004234210912(12자리) 형식을 -> 042-2342-0912 형식으로 변환)
+// do_on_location_incentive : [concurrentOdrFlag] -1이면 -1 아니면 1 설정
+// priority : Default 값으로 5 설정
+// base_value : Default 값으로 1000 설정
+// split_allowed : Default 값으로 false 설정
+// do_on_site : Default 값으로 false 설정
+// interrupt : Default 값으로 false 설정
+// cost_of_split : Default 값으로 0.0 설정
+rule "VS6_Activity"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		rulesDB : RulesDB()
+		activity : Activity()
+	then
+		activity.setId(intglVo.getAppointmentRequestId());
+		activity.setActivityClassId("CALL");
+		activity.setActivityTypeId(rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), null));
+		activity.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+		activity.setDescription(order.getCustName() + "/" + StringUtil.toPhoneString(order.getContactTelNum()));
+		activity.setDateTimeCreated(ConversionUtil.getXMLGregorianCalendar());
+		activity.setDateTimeOpen(order.getRcvDt());
+		activity.setExternalRef(StringUtil.toPhoneString(order.getSvcId()));
+		activity.setDoOnLocationIncentive(Double.valueOf((order.getConcurrentOdrFlag() == -1)? -1 : 1));
+		activity.setPriority(5); // set default value
+		activity.setBaseValue(1000D);
+        update(activity);
+end
+
+// vstype == 6C 이면..
+// id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//        [worktype] + [officeScode] + [odrNum] 매핑
+//      else
+//        [odrNum] 매핑
+//      end if
+// activity_class_id : Default 값으로 'CALL' 설정
+// activity_type_id : [workType], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+// description : [custName] + "/"  + [contactTelNum]  매핑 (001020310000(12자리)  형식을 -> 010-2031-0000 형식으로 변환)
+// date_time_created : Default 값으로 I/L 시스템 시간 설정
+// date_time_open : [rcvDt] 매핑
+// external_ref : case when [workType] = 1 then [svcId] 
+//				  else  
+//					   case when [svcMainClsCode] = 1000 then "PS" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 3000 then "AD" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 9000 then "VO" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = IPM0 then "MT" + "-" + [svcId] 
+//				  end
+// do_on_location_incentive : [concurrentOdrFlag] -1이면 -1 아니면 1 설정
+// priority : Default 값으로 5 설정
+// split_allowed : Default 값으로 false 설정
+// do_on_site : Default 값으로 false 설정
+// interrupt : Default 값으로 false 설정
+// cost_of_split : Default 값으로 0.0 설정
+rule "VS6C_Activity"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activity : Activity()
+	then
+		activity.setId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() : order.getOdrNum());
+		activity.setActivityClassId("CALL");
+		activity.setActivityTypeId(rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), null));
+		activity.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+		activity.setDescription(order.getCustName() + "/" + StringUtil.toPhoneString(order.getContactTelNum()));
+		activity.setDateTimeCreated(ConversionUtil.getXMLGregorianCalendar());
+		activity.setDateTimeOpen(order.getRcvDt());
+		activity.setExternalRef(rulesVo.getExternalRef());
+		activity.setDoOnLocationIncentive(Double.valueOf((order.getConcurrentOdrFlag() == -1)? -1 : 1));
+		activity.setPriority(5); // set default value
+        update(activity);
+end
+
+// vstype == 10 이면..
+// id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// activity_class_id : Default 값으로 'CALL' 설정
+// activity_type_id : [workType], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+// description : 국사코드 lookup table에서 [officeScode] +"_"+[workTeamCode]를 key로 국사명 매핑 + "/" + [custName] + "/"  + [contactTelNum]  매핑
+// date_time_created : Default 값으로 I/L 시스템 시간 설정
+// date_time_open : [rcvDt] 매핑
+// external_ref : case when [workType] = 1 then [workOdrTypeCode] + "-" + [svcId] 
+//				  else  
+//					   case when [svcMainClsCode] = 1000 then "PS" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 3000 then "AD" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = 9000 then "VO" + "-" + [svcId] 
+//					   case when [svcMainClsCode] = IPM0 then "MT" + "-" + [svcId] 
+//				  end
+// do_on_location_incentive : [concurrentOdrFlag] -1이면 -1 아니면 1 설정
+// priority : Default 값으로 5 설정
+// service_level : left(addrEtc, 64) 매핑
+// split_allowed : Default 값으로 false 설정
+// do_on_site : Default 값으로 false 설정
+// interrupt : Default 값으로 false 설정
+// cost_of_split : Default 값으로 0.0 설정
+rule "VS10_Activity"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activity : Activity()
+	then
+		activity.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activity.setActivityClassId("CALL");
+		activity.setActivityTypeId(rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activity.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+		activity.setDescription(rulesDB.selectOfficeName(order.getOfficeScode() + "_" + order.getWorkTeamCode()) + "/" + order.getCustName() + "/" + order.getContactTelNum());
+		activity.setDateTimeCreated(ConversionUtil.getXMLGregorianCalendar());
+		activity.setDateTimeOpen(order.getRcvDt());
+		activity.setExternalRef(rulesVo.getExternalRef());
+		activity.setDoOnLocationIncentive(Double.valueOf((order.getConcurrentOdrFlag() == -1)? -1 : 1));
+		activity.setPriority(5); // set default value
+		activity.setServiceLevel(StringUtil.leftstring(order.getAddrEtc(), 64));
+        update(activity);
+end

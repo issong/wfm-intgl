@@ -1,0 +1,240 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.ActivitySLA;
+
+// vstype == 1 이고 priority == 1 이면
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sla_type_id : [workType ], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaStartDt] - [AM_EA] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaStartDt] - [PM_EA] 설정
+//                  else  [bt360SlaStartDt]
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndDt] - [AM_ET] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndDt] - [PM_ET] 설정
+//                else [bt360SlaEndDt]
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 1 설정
+//
+// vstype == 1 이고 priority == 2 이면
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sla_type_id : Default 값으로 'Double_SLA' 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaEndtDt] - [AM_ET] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaEndtDt] - [PM_ET] 설정
+//                  else 해당 Set 생성안함.
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndtDt] + [AM_SE] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndtDt] + [PM_SE] 설정
+//                else 해당 Set 생성안함.
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 2 설정
+rule "VS1_ActivitySLA"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activitySLA : ActivitySLA()
+	then
+		activitySLA.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activitySLA.setSlaTypeId((rulesVo.getPriority() == 1)? rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()) : "Double_SLA");
+		activitySLA.setDatetimeStart(order.getBt360SlaStartDt());
+		activitySLA.setDatetimeEnd(order.getBt360SlaEndDt());
+		activitySLA.setStartBased(true); // set default value
+		activitySLA.setPriority(rulesVo.getPriority()); // set default value
+        update(activitySLA);
+end
+
+// vstype == 5 이고 priority == 1 이면
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sla_type_id : [workType ], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaStartDt] - [AM_EA] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaStartDt] - [PM_EA] 설정
+//                  else  [bt360SlaStartDt]
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndDt] - [AM_ET] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndDt] - [PM_ET] 설정
+//                else [bt360SlaEndDt]
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 1 설정
+//
+// vstype == 5 이고 priority == 2 이면
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sla_type_id : Default 값으로 'Double_SLA' 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaEndtDt] - [AM_ET] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaEndtDt] - [PM_ET] 설정
+//                  else 해당 Set 생성안함.
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndtDt] + [AM_SE] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndtDt] + [PM_SE] 설정
+//                else 해당 Set 생성안함.
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 2 설정
+rule "VS5_ActivitySLA"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activitySLA : ActivitySLA()
+	then
+		activitySLA.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activitySLA.setSlaTypeId((rulesVo.getPriority() == 1)? rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()) : "Double_SLA");
+		activitySLA.setDatetimeStart(order.getBt360SlaStartDt());
+		activitySLA.setDatetimeEnd(order.getBt360SlaEndDt());
+		activitySLA.setStartBased(true); // set default value
+		activitySLA.setPriority(rulesVo.getPriority()); // set default value
+        update(activitySLA);
+end
+
+// vstype == 6 이면..
+// activity_id : [appointmentRequestId] 매핑
+// sla_type_id : default 'Appointment' 설정
+// datetime_start : [bt360SlaStartDt] 매핑
+// datetime_end : [bt360SlaEndDt] 매핑
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 1 설정
+rule "VS6_ActivitySLA"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		rulesDB : RulesDB()
+		activitySLA : ActivitySLA()
+	then
+		activitySLA.setActivityId(intglVo.getAppointmentRequestId());
+		activitySLA.setSlaTypeId("Appointment");
+		activitySLA.setDatetimeStart(order.getBt360SlaStartDt());
+		activitySLA.setDatetimeEnd(order.getBt360SlaEndDt());
+		activitySLA.setStartBased(true); // set default value
+		activitySLA.setPriority(1); // set default value
+        update(activitySLA);
+end
+
+// vstype == 6C 이면
+// activity_id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//                 [worktype] + [officeScode] + [odrNum] 매핑
+//               else
+//                 [odrNum] 매핑
+//               end if
+// activity_id : [odrNum] 매핑
+// sla_type_id : default 'Appointment' 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaStartDt] - [AM_EA] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaStartDt] - [PM_EA] 설정
+//                  else [bt360SlaStartDt]
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndDt] - [AM_ET] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndDt] - [PM_ET] 설정
+//                else [bt360SlaEndDt]
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 1 설정
+//
+// vstype == 6C 이고 priority == 2 이면
+// activity_id : [odrNum] 매핑
+// sla_type_id : Default 값으로 'Double_SLA' 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaEndtDt] - [AM_ET] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaEndtDt] - [PM_ET] 설정
+//                  else 해당 Set 생성안함.
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndtDt] + [AM_SE] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndtDt] + [PM_SE] 설정
+//                else 해당 Set 생성안함.
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 2 설정
+rule "VS6C_ActivitySLA"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activitySLA : ActivitySLA()
+	then
+		activitySLA.setActivityId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() : order.getOdrNum());
+		activitySLA.setSlaTypeId((rulesVo.getPriority() == 1)? "Appointment" : "Double_SLA");
+		activitySLA.setDatetimeStart(order.getBt360SlaStartDt());
+		activitySLA.setDatetimeEnd(order.getBt360SlaEndDt());
+		activitySLA.setStartBased(true); // set default value
+		activitySLA.setPriority(rulesVo.getPriority()); // set default value
+        update(activitySLA);
+end
+
+// vstype == 10 이고 priority == 1 이면
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sla_type_id : [workType ], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 activity_type_id 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaStartDt] - [AM_EA] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaStartDt] - [PM_EA] 설정
+//                  else  [bt360SlaStartDt]
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndDt] - [AM_ET] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndDt] - [PM_ET] 설정
+//                else [bt360SlaEndDt]
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 1 설정
+//
+// vstype == 10 이고 priority == 2 이면
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sla_type_id : Default 값으로 'Double_SLA' 설정
+// datetime_start : case [bt360SlaStartDt] = 오전(09:00) then 
+//                       [bt360SlaEndtDt] - [AM_ET] 설정
+//                  case [bt360SlaStartDt] = 오후(13:00) then
+//                       [bt360SlaEndtDt] - [PM_ET] 설정
+//                  else 해당 Set 생성안함.
+// datetime_end : case [bt360SlaStartDt] = 오전(09:00) then 
+//                     [bt360SlaEndtDt] + [AM_SE] 설정
+//                case [bt360SlaStartDt] = 오후(13:00) then
+//                     [bt360SlaEndtDt] + [PM_SE] 설정
+//                else 해당 Set 생성안함.
+// start_based : Default 값으로 true 설정
+// priority : Default 값으로 2 설정
+rule "VS10_ActivitySLA"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		activitySLA : ActivitySLA()
+	then
+		activitySLA.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activitySLA.setSlaTypeId((rulesVo.getPriority() == 1)? rulesDB.selectActivityTypeId(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()) : "Double_SLA");
+		activitySLA.setDatetimeStart(order.getBt360SlaStartDt());
+		activitySLA.setDatetimeEnd(order.getBt360SlaEndDt());
+		activitySLA.setStartBased(true); // set default value
+		activitySLA.setPriority(rulesVo.getPriority()); // set default value
+        update(activitySLA);
+end

@@ -1,0 +1,702 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.ConversionUtil;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com.kt.oss.wmIntgl.datamapper.domain.intgl.MappingTypeVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.InputReference;
+
+// vstype == 1 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'LOAD' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS1_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("Standard dataset illustrating 360 functionality");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("LOAD");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 3 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+// data_path : Default 값으로 'c:\SDS Rule Sets\Std Dataset SDS Rules.xml' 설정 (일단 제거, 사용안함)
+rule "VS3_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS3)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("Status change to 70 - stock update");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 4 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+// data_path : Default 값으로 'c:\SDS Rule Sets\Std Dataset SDS Rules.xml' 설정 (일단 제거, 사용안함)
+rule "VS4_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS4)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("Status change to 70 - stock update");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 3A 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+// data_path : Default 값으로 'c:\SDS Rule Sets\Std Dataset SDS Rules.xml' 설정 (일단 제거, 사용안함)
+rule "VS3A_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS3A)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("Status change to 70 - stock update");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 5 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS5_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 6 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : ICIS, NeOSS-SA에서 이 인터페이스를 요청하는 시스템시간 source system time [sendDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS6_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 6B 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : ICIS, NeOSS-SA에서 이 인터페이스를 요청하는 시스템시간 source system time [sendDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS6B_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6B)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 6C 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : ICIS, NeOSS-SA에서 이 인터페이스를 요청하는 시스템시간 source system time [sendDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS6C_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 6D 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : ICIS/NeOSS-SA에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS6D_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6D)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 7A 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS7A_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7A)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 7B 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS7B_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7B)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 7C 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS7C_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7C)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 8 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS8_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS8)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 10 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS10_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 12 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+// data_path : Default 값으로 'c:\SDS Rule Sets\Std Dataset SDS Rules.xml' 설정 (일단 제거, 사용안함)
+rule "VS12_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS12)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("Standard dataset illustrating 360 functionality");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 20 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : Default 값으로 IL Current Time 설정
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS20_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS20)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+        update(inputReference);
+end
+
+// vstype == 90 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS90_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS90)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+    	inputReference.setLoadStatus(0);
+        update(inputReference);
+end
+
+// vstype == 91 이면
+// id : UUID 생성
+// dataset_id : [sourceId] 매핑
+// datetime : NeOSS에서 이 인터페이스를 요청하는 시스템시간 NeOSS system time [sourceDt] 매핑
+// description : Default 값으로 '' 설정
+// duration : Default 값으로 P2DT0H0M0.000S 설정
+// appointment_window_duration : Default 값으로 P30DT0H0M0.000S 설정
+// process_type : Default 값으로 'APPOINTMENT' 설정
+// input_type : Default 값으로 'CHANGE' 설정
+// organisation_id : Default 값으로 1 설정
+// load_status : Default 값으로 0 설정
+rule "VS91_InputReference"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS91)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		mappingTypeVo : MappingTypeVo()
+		inputReference : InputReference()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		inputReference.setId(rulesVo.getInputReferenceId());
+    	// 여기는 UAT를 위해 임시로 만들어짐
+    	inputReference.setDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+    	//inputReference.setDatasetId(intglVo.getSourceId());
+    	//inputReference.setDatetime(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+    	inputReference.setDescription("");
+    	inputReference.setDuration(ConversionUtil.getIntToDuration(true, 2, 0, 0, 0));
+    	inputReference.setAppointmentWindowDuration(ConversionUtil.getIntToDuration(true, 30, 0, 0, 0));
+    	inputReference.setProcessType("APPOINTMENT");
+    	inputReference.setInputType("CHANGE");
+    	inputReference.setOrganisationId(1);
+    	inputReference.setLoadStatus(0);
+        update(inputReference);
+end

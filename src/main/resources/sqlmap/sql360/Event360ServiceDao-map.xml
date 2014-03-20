@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.eventhandler.dao.bt360.Event360ServiceDao" >
+
+	<!-- 
+	  - 360 APPLICATION_INSTANCE_TASK 테이블을 조회합니다.
+	  -->	
+	<select id="selectApplicationInstanceTask" parameterType="ApplicationInstanceTaskVo" resultType="ApplicationInstanceTaskVo">
+		SELECT 
+		    APPLICATION_INSTANCE_ID as applicationInstanceId
+		    , ORGANISATION_ID as organisationId
+		    , EXTERNAL_TASK_ID as externalTaskId
+		    , MANUALLY_ASSIGNED as manuallyAssigned
+		    , EXTERNAL_DATABASE_ID as externalDatabaseId
+		    , APPLICATION_TYPE_ID as applicationTypeId
+		FROM APPLICATION_INSTANCE_TASK
+		<trim prefix="WHERE" prefixOverrides="AND ">
+			<if test="@org.springframework.util.StringUtils@hasLength(searchApplicationInstanceId)">
+				AND APPLICATION_INSTANCE_ID LIKE '%'|| #{searchApplicationInstanceId} ||'%'
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(searchExternalTaskId)">
+				AND EXTERNAL_TASK_ID LIKE '%'|| #{searchExternalTaskId} ||'%'
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(searchApplicationTypeId)">
+				AND APPLICATION_TYPE_ID LIKE '%'|| #{searchApplicationTypeId} ||'%'
+			</if>						
+		</trim>
+		ORDER BY APPLICATION_INSTANCE_ID		
+	</select>
+	
+    <!-- 
+      - 360 SESSION 테이블을 조회합니다.
+      -->   
+    <select id="selectSession" parameterType="SessionVo" resultType="SessionVo">
+        SELECT 
+            ORGANISATION_ID         as organisationId
+            , USER_ID               as userId   
+            , TO_CHAR(START_DATETIME, 'YYYY-MM-DD HH24:MI:SS.FF3')        as startDatetime  
+            , TO_CHAR(END_DATETIME, 'YYYY-MM-DD HH24:MI:SS.FF3')          as endDatetime   
+            , EXTERNAL_TASK_ID      as externalTaskId     
+            , TO_CHAR(LAST_ACCESS, 'YYYY-MM-DD HH24:MI:SS.FF3')           as lastAccess     
+            , LAST_OPERATION        as lastOperation       
+            , CLIENT_ID             as clientId  
+            , CLIENT_DATA           as clientData    
+            , APPLICATION_TYPE_ID   as applicationTypeId            
+            , EXTERNAL_DATABASE_ID  as externalDatabaseId   
+        FROM "SESSION"
+        <trim prefix="WHERE" prefixOverrides="AND "> 
+            <if test="@org.springframework.util.StringUtils@hasLength(searchUserId)">
+                AND USER_ID = #{searchUserId}
+            </if>
+            <if test="onlyLoggedUser">
+                AND END_DATETIME IS NULL
+            </if>
+        </trim>
+        ORDER BY
+            USER_ID, START_DATETIME DESC       
+    </select>
+	
+</mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache updateCheck="false">
+
+	<!-- Disk Store -->
+	<diskStore path="java.io.tmpdir"/>
+
+	<!-- 기본 Cache 설정 -->
+	<defaultCache eternal="true"
+	              maxElementsInMemory="1"
+	              overflowToDisk="true"
+	              diskPersistent="true"
+	              timeToIdleSeconds="0"
+	              timeToLiveSeconds="600"
+	              memoryStoreEvictionPolicy="LRU"/>
+
+	<!-- trans OfficeScode Cache -->
+	<cache name="transOfficeScodeCache"
+	       eternal="false"
+	       maxElementsInMemory="100"
+	       overflowToDisk="false"
+	       diskPersistent="false"
+	       timeToIdleSeconds="3600"
+	       timeToLiveSeconds="0"
+	       memoryStoreEvictionPolicy="LRU"/>	
+
+	<!-- accept client IP Cache -->
+	<cache name="acceptClientIpCache"
+	       eternal="false"
+	       maxElementsInMemory="100"
+	       overflowToDisk="false"
+	       diskPersistent="false"
+	       timeToIdleSeconds="3600"
+	       timeToLiveSeconds="0"
+	       memoryStoreEvictionPolicy="LRU"/>	
+	       
+	<!-- mapping360io IP Cache -->
+	<cache name="mapping360IpCache"
+	       eternal="false"
+	       maxElementsInMemory="100"
+	       overflowToDisk="false"
+	       diskPersistent="false"
+	       timeToIdleSeconds="3600"
+	       timeToLiveSeconds="0"
+	       memoryStoreEvictionPolicy="LRU"/>	          
+
+    <!-- reasonType Cache -->
+    <cache name="reasonTypeCache"
+           eternal="false"
+           maxElementsInMemory="100"
+           overflowToDisk="false"
+           diskPersistent="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="0"
+           memoryStoreEvictionPolicy="LRU"/>    	
+</ehcache>

@@ -1,0 +1,27 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import java.util.ArrayList;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.Rules._Rules;
+
+rule "intgl_rule_vs1"
+	dialect "java"
+	no-loop
+	when
+		drlList : ArrayList()
+	then
+		drlList.add(_Rules.Location);
+		drlList.add(_Rules.LocationRegion);
+		drlList.add(_Rules.Activity);
+		drlList.add(_Rules.ActivitySLA);
+		drlList.add(_Rules.ActivityStatus);
+		drlList.add(_Rules.ResourcePreference);
+		drlList.add(_Rules.ScheduleEvent);
+		drlList.add(_Rules.AdditionalAttribute);
+		drlList.add(_Rules.SourceData);
+		drlList.add(_Rules.SourceDataParameter);
+		drlList.add(_Rules.Broadcast);
+		drlList.add(_Rules.BroadcastParameter);
+		drlList.add(_Rules.InputReference);
+        update(drlList);
+end

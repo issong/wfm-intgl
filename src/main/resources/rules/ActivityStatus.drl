@@ -1,0 +1,558 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.ConversionUtil;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMCustomException;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrderStatus;
+import com.kt.oss.wmIntgl.datamapper.domain.intgl.MappingTypeVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.ActivityStatus;
+
+// vstype == 1 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], []bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// duration : TB_WM_MAPPINGODRTYPE 테이블에서 해당 threesixtyodr_type의 duration값을 조회하여 ct_value만큼 차감(%)후 [duration] 매핑(PT1H20 형태로 변환 후 매핑) ([concurrentSeq]에 값이 있을 경우만 해당 element 생성)
+// memo : [remark] 매핑
+// highlight : [workType ], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 나온activity_type_id의 Left(0, 4) 가 'VVIP' 일경우 activity_type_id 매핑 (VVIP가 아닐 경우 해당 SET 생성 안함)
+rule "VS1_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration((StringUtil.isEmpty(order.getConcurrentSeq()))? null : rulesDB.selectDuration(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activityStatus.setMemo(order.getRemark());
+		activityStatus.setHighlight(rulesDB.selectActivityTypeIdVVIP(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+        update(activityStatus);
+end
+
+// vstype == 3 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// reason : [reason] 매핑
+// reason_value : [reason_value] 매핑
+rule "VS3_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS3)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setReason(order.getReason());
+		activityStatus.setReasonValue(order.getReasonValue());
+        update(activityStatus);
+end
+
+// vstype == 4 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : VS4일 경우 [bt360FixedWorkerId] 가 Null or 빈값이면 Default 값으로 -1 설정
+//             else [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정 (db조회 후 없을 경우 99 설정)
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// reason : [reason] 매핑
+// reason_value : [reason_value] 매핑
+rule "VS4_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS4)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? -1 : rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setReason(order.getReason());
+		activityStatus.setReasonValue(order.getReasonValue());
+        update(activityStatus);
+end
+
+// vstype == 3A 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// commit_sort_value : [bt360CommitValue] 매핑, null or 빈값 이면 해당 element 생성안함.
+rule "VS3A_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS3A)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setCommitSortValue(order.getBt360CommitValue());
+        update(activityStatus);
+end
+
+// vstype == 5 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], []bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [workStateDt] 매핑
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// duration : TB_WM_MAPPINGODRTYPE 테이블에서 해당 threesixtyodr_type의 duration값을 조회하여 ct_value만큼 차감(%)후 [duration] 매핑(PT1H20 형태로 변환 후 매핑) ([concurrentSeq]에 값이 있을 경우만 해당 element 생성)
+// memo : [remark] 매핑
+// highlight : [workType ], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 나온activity_type_id의 Left(0, 4) 가 'VVIP' 일경우 activity_type_id 매핑 (VVIP가 아닐 경우 해당 SET 생성 안함)
+rule "VS5_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration((StringUtil.isEmpty(order.getConcurrentSeq()))? null : rulesDB.selectDuration(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activityStatus.setMemo(order.getRemark());
+		activityStatus.setHighlight(rulesDB.selectActivityTypeIdVVIP(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+        update(activityStatus);
+end
+
+// vstype == 6 이면..
+// activity_id : [appointmentRequestId] 매핑
+// status_id : default 값으로 '-1' 설정 
+// date_time_status : [rcvDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : default 'false' 설정
+// resource_id : default '' 설정
+// date_time_fixed : default null 설정
+// visit_id : Default 값으로 1 설정
+// duration : TB_WM_MAPPINGODRTYPE 테이블에서 해당 threesixtyodr_type의 duration값을 조회하여 ct_value만큼 차감(%)후 [duration] 매핑(PT1H20 형태로 변환 후 매핑) ([concurrentSeq]에 값이 있을 경우만 해당 element 생성)
+// memo : [remark] 매핑
+rule "VS6_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getRcvDt()));
+		activityStatus.setActivityId(intglVo.getAppointmentRequestId());
+		//activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+		activityStatus.setStatusId(-1);
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getRcvDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed(false);
+		activityStatus.setResourceId("");
+		activityStatus.setDateTimeFixed(null);
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration((StringUtil.isEmpty(order.getConcurrentSeq()))? null : rulesDB.selectDuration(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), null));
+		activityStatus.setMemo(order.getRemark());
+        update(activityStatus);
+end
+
+// vstype == 6C 이면..
+// activity_id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//                 [worktype] + [officeScode] + [odrNum] 매핑
+//               else
+//                 [odrNum] 매핑
+//               end if
+// status_id : default 값으로 '0' 설정 
+// date_time_status : [rcvDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : default 'false' 설정
+// resource_id : default '' 설정
+// date_time_fixed : default null 설정
+// visit_id : Default 값으로 1 설정
+// duration : TB_WM_MAPPINGODRTYPE 테이블에서 해당 threesixtyodr_type의 duration값을 조회하여 ct_value만큼 차감(%)후 [duration] 매핑(PT1H20 형태로 변환 후 매핑) ([concurrentSeq]에 값이 있을 경우만 해당 element 생성)
+// memo : [remark] 매핑
+rule "VS6C_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getRcvDt()));
+		activityStatus.setActivityId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() : order.getOdrNum());
+		//activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+		activityStatus.setStatusId(0);
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getRcvDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed(false);
+		activityStatus.setResourceId("");
+		activityStatus.setDateTimeFixed(null);
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration((StringUtil.isEmpty(order.getConcurrentSeq()))? null : rulesDB.selectDuration(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), null));
+		activityStatus.setMemo(order.getRemark());
+        update(activityStatus);
+end
+
+// vstype == 7A 이면..
+// activity_id :  [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// duration : [duration] * 1000 후 설정
+// highlight : [highlight] 매핑
+// reason : [reason] 매핑
+// reason_value : [reason_value] 매핑
+rule "VS7A_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7A)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration(StringUtil.isEmpty(order.getDuration())? null : ConversionUtil.getIntToDuration(true, 0, (Integer.parseInt(order.getDuration()) / 60), (Integer.parseInt(order.getDuration()) % 60), 0));
+		activityStatus.setHighlight(order.getHighlight());
+		activityStatus.setReason(order.getReason());
+		activityStatus.setReasonValue(order.getReasonValue());
+        update(activityStatus);
+end
+
+// vstype == 7B 이면..
+// activity_id : [workOdrNum ] 매핑
+// status_id : Default 값으로 35 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : [bt360FixedOdrYn] 매핑
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// duration : [duration] 매핑(PT1H20 형태로 변환 후 매핑)
+// reason : [reason] 매핑
+// commit_sort_value : [bt360CommitValue] 매핑, null or 빈값 이면 해당 element 생성안함.
+rule "VS7B_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7B)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkOdrNum());
+		activityStatus.setStatusId(35);
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed(order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration(StringUtil.isEmpty(order.getDuration())? null : ConversionUtil.getIntToDuration(true, 0, (Integer.parseInt(order.getDuration()) / 60), (Integer.parseInt(order.getDuration()) % 60), 0));
+		activityStatus.setReason(order.getReason());
+		activityStatus.setCommitSortValue(order.getBt360CommitValue());
+        update(activityStatus);
+end
+
+// vstype == 7C 이면..
+// activity_id : [workOdrNum ] 매핑
+// status_id : Default 값으로 0 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : [bt360FixedOdrYn] 매핑
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// duration : [duration] 매핑(PT1H20 형태로 변환 후 매핑)
+// reason : [reason] 매핑
+// commit_sort_value : [bt360CommitValue] 매핑, null or 빈값 이면 해당 element 생성안함.
+rule "VS7C_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7C)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkOdrNum());
+		activityStatus.setStatusId(0);
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed(order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration(StringUtil.isEmpty(order.getDuration())? null : ConversionUtil.getIntToDuration(true, 0, (Integer.parseInt(order.getDuration()) / 60), (Integer.parseInt(order.getDuration()) % 60), 0));
+		activityStatus.setReason(order.getReason());
+		activityStatus.setCommitSortValue(order.getBt360CommitValue());
+        update(activityStatus);
+end
+
+// vstype == 10 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : if [bt360FixedOdrYn] = true and [bt360FixedWorkerId]  = null or '' then false 설정 else [bt360FixedOdrYn] 매핑 end if
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+// duration : TB_WM_MAPPINGODRTYPE 테이블에서 해당 threesixtyodr_type의 duration값을 조회하여 ct_value만큼 차감(%)후 [duration] 매핑(PT1H20 형태로 변환 후 매핑) ([concurrentSeq]에 값이 있을 경우만 해당 element 생성)
+// memo : [remark] 매핑
+// highlight : [workType ], [svcMainClsCode], [CompanyCode], [bt360SpecialWorkTypeCode], [bt360VvipYn] 을 조건으로 TB_WM_MAPPINGODRTYPE 테이블을 조회하여 나온activity_type_id의 Left(0, 4) 가 'VVIP' 일경우 activity_type_id 매핑 (VVIP가 아닐 경우 해당 SET 생성 안함)
+// reason : [reason] 매핑
+// reason_value : [reason_value] 매핑
+rule "VS10_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getWorkStateDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed((StringUtil.isEmpty(order.getBt360FixedWorkerId())) ? false : order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+		activityStatus.setDuration((StringUtil.isEmpty(order.getConcurrentSeq()))? null : rulesDB.selectDuration(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activityStatus.setMemo(order.getRemark());
+		activityStatus.setHighlight(rulesDB.selectActivityTypeIdVVIP(order.getWorkType(), order.getSvcMainClsCode(), order.getCompanyCode(), order.getBt360SpecialWorkTypeCode(), order.getBt360VvipYn(), order.getBt360TechMethod()));
+		activityStatus.setReason(order.getReason());
+		activityStatus.setReasonValue(order.getReasonValue());
+        update(activityStatus);
+end
+// vstype == 20 이면..
+// activity_id : [workOdrNum ] 매핑
+// status_id : Default 값으로 30 설정
+// date_time_status : [workStateDt] 매핑
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// fixed : [bt360FixedOdrYn] 매핑
+// resource_id : [bt360FixedWorkerId] 매핑
+// date_time_fixed : [bt360FixedVisitDt] 매핑
+// visit_id : Default 값으로 1 설정
+rule "VS20_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS20)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), ConversionUtil.getDate(order.getWorkStateDt()));
+		activityStatus.setActivityId(order.getWorkOdrNum());
+		//activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+		activityStatus.setStatusId(30);
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(order.getRcvDt());
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setFixed(order.isBt360FixedOdrYn());
+		activityStatus.setResourceId(order.getBt360FixedWorkerId());
+		activityStatus.setDateTimeFixed(order.getBt360FixedVisitDt());
+		activityStatus.setVisitId(1); // set default value
+        update(activityStatus);
+end
+
+// vstype == 90 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [sourceDt]
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// visit_id : Default 값으로 1 설정
+rule "VS90_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMCustomException()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS90)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setVisitId(1); // set default value
+        update(activityStatus);
+end
+
+// vstype == 91 이면..
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// status_id : [workProgState], [workProcState], [bt360AddWorkProgState] 을 조건으로 TB_WM_MAPPINGSTATUS 테이블을 조회하여 status_id 설정
+// date_time_status : [sourceDt]
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// visit_id : Default 값으로 1 설정
+rule "VS91_ActivityStatus"
+	dialect "java"
+	no-loop
+	when
+		order : WMCustomException()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS91)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		activityStatus : ActivityStatus()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		activityStatus.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		activityStatus.setStatusId(rulesDB.selectActivityStatusId(order.getWorkProgState(), order.getWorkProcState(), order.getBt360AddWorkProgState()));
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+		//activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar(mappingTypeVo.getIrSourceDt()));
+    	// 여기는 원본 소스
+		//activityStatus.setDateTimeStatus(ConversionUtil.getXMLGregorianCalendar(intglVo.getSourceDt()));
+		activityStatus.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		activityStatus.setVisitId(1); // set default value
+        update(activityStatus);
+end

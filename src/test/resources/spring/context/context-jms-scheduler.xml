@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+       						http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+       						http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-3.1.xsd">
+
+
+	<!-- =================================================== -->
+	<!-- 		Destination Define(Queue/Topic)		         -->
+	<!-- =================================================== -->
+
+ 		<!-- use ActiveMQQueue -->
+		<bean id="schedDestination" class="org.apache.activemq.command.ActiveMQQueue">
+			<constructor-arg value="scheduler.queue"/>
+		</bean>
+		
+		
+		<!-- use JBoss HornetQ 
+	    <bean id="schedDestination" class="org.springframework.jndi.JndiObjectFactoryBean">
+	        <property name="jndiName" value="/queue/schedulerQueue" />
+	        <property name="jndiTemplate" ref="jndiTemplate"/>
+	    </bean>
+	    -->
+	<!-- =================================================== -->
+	<!-- 		Client JMS Template							 -->
+	<!-- =================================================== -->
+		
+		<bean id="schedJmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+			<property name="connectionFactory" ref="connectionFactory"/>
+			<property name="defaultDestination" ref="schedDestination"/>
+			<property name="receiveTimeout" value="10000"/>
+		</bean>	 	    
+	    
+	<!-- =================================================== -->
+	<!-- 		JMS Client              					 -->
+	<!-- =================================================== -->
+				
+		<bean id="schedulerDataJMSClient" class="com.kt.oss.wmIntgl.datahandler.jms.impl.SchedulerDataJMSClientImpl">
+			<property name="jmsTemplate" ref="schedJmsTemplate"/>
+		</bean>	    
+
+	<!-- =================================================== -->
+	<!-- 		JMS Listener & Adapter   					 -->
+	<!-- =================================================== -->
+	
+		<bean id="schedulerDataJMSListener" class="com.kt.oss.wmIntgl.datahandler.jms.listener.SchedulerDataJMSListener" />
+
+		<bean id="schedulerDataConverter" class="com.kt.oss.wmIntgl.datahandler.jms.message.SchedulerDataConverter" />
+
+		<bean id="schedulerDataListenerAdapter" class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+			<property name="delegate" ref="schedulerDataJMSListener" />
+			<property name="defaultListenerMethod" value="receiveData" />
+			<property name="messageConverter" ref="schedulerDataConverter" />
+		</bean>	
+		
+		<bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+			<property name="connectionFactory" ref="connectionFactory"/>
+			<property name="destination" ref="schedDestination"/>
+			<property name="messageListener" ref="schedulerDataListenerAdapter"/>
+			<property name="sessionTransacted" value="true"/>
+		</bean>
+		
+</beans>

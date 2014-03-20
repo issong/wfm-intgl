@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans  http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+       					   http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util-3.1.xsd
+						   http://www.springframework.org/schema/mvc    http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd">
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources/ directory -->
+	<mvc:resources mapping="/resource/**" location="/resource/"/>
+	<mvc:resources mapping="/ext-js/**" location="/ext-js/"/>
+
+	<!-- Message Converters -->
+
+	<!--
+		Implementation of HttpMessageConverter that can read and write byte arrays.
+		By default, this converter supports all media types (*/*), and writes with a Content-Type of application/octet-stream.
+		This can be overridden by setting the supportedMediaTypes property.
+
+	<bean id="byteMessageConverter" class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>
+	-->
+
+	<!--
+		Implementation of HttpMessageConverter that can read and write strings.
+		By default, this converter supports all media types (*/*), and writes with a Content-Type of text/plain.
+		This can be overridden by setting the supportedMediaTypes property.
+	-->
+	
+	<bean id="stringMessageConverter" 
+		class="org.springframework.http.converter.StringHttpMessageConverter"
+		p:supportedMediaTypes-ref="supportedMediaTypes"/>
+		
+	<util:list id="supportedMediaTypes">
+		<value>text/plain;charset=UTF-8</value>
+		<value>text/html;charset=UTF-8</value>
+		<value>application/json;charset=UTF-8</value>
+		<value>application/xml</value>
+	</util:list>		
+
+	<!--  
+	<mvc:annotation-driven>
+	    <mvc:message-converters register-defaults="true">
+	        <bean class="com.kt.oss.wmIntgl.common.base.spring.http.converter.ConfigurableStringHttpMessageConverter">
+	        	<constructor-arg value="UTF-8"/>
+	        </bean>
+	    </mvc:message-converters>
+	</mvc:annotation-driven>	
+	-->
+	
+	<!--
+		Implementation of HttpMessageConverter that can handle form data, including multipart form data (i.e. file uploads).
+		This converter can write the application/x-www-form-urlencoded and multipart/form-data media types, and read the application/x-www-form-urlencoded) media type (but not multipart/form-data).
+		In other words, this converter can read and write 'normal' HTML forms (as MultiValueMap<String, String>), and it can write multipart form (as MultiValueMap<String, Object>.
+		When writing multipart, this converter uses other HttpMessageConverters to write the respective MIME parts.
+		By default, basic converters are registered (supporting Strings and Resources, for instance); these can be overridden by setting the partConverters property.
+
+	<bean id="formMessageConverter" class="org.springframework.http.converter.FormHttpMessageConverter"/>
+	-->
+
+    <!-- Implementation of HttpMessageConverter that can read and write Source objects .
+
+	<bean id="sourceMessageConverter" class="org.springframework.http.converter.xml.SourceHttpMessageConverter"/>
+	-->
+	
+	<!--
+		Implementation of HttpMessageConverter that can read and write XML using JAXB2.
+		This converter can read classes annotated with XmlRootElement and XmlType, and write classes annotated with with XmlRootElement, or subclasses thereof.
+
+	<bean id="jaxb2MessageConverter" class="org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter"/>
+	-->
+
+	<!--
+		Implementation of HttpMessageConverter that can read and write JSON using Jackson's ObjectMapper.
+		This converter can be used to bind to typed beans, or untyped HashMap instances.
+		By default, this converter supports application/json. This can be overridden by setting the supportedMediaTypes property.
+	-->
+	<bean id="mappingJacksonHttpMessageConverter" 
+		class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter" 
+		p:supportedMediaTypes="application/json;charset=UTF-8"/>
+
+    <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean" />
+
+    <bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean" />
+
+	<bean id="webBindingInitializer" class="org.springframework.web.bind.support.ConfigurableWebBindingInitializer"
+	 	p:validator-ref="validator"
+	 	p:conversionService-ref="conversionService"/>
+	 	
+	<bean 
+		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"
+		p:synchronizeOnSession="true"
+		p:webBindingInitializer-ref="webBindingInitializer" 
+		p:messageConverters-ref="messageConverters" />
+	
+	<util:list id="messageConverters">
+		<!--  
+		<ref bean="jaxb2MessageConverter"/>
+		<ref bean="byteMessageConverter"/>
+		<ref bean="formMessageConverter"/>
+		<ref bean="sourceMessageConverter"/>
+		-->
+		<ref bean="stringMessageConverter"/>
+		<ref bean="mappingJacksonHttpMessageConverter"/>	
+	</util:list>
+	
+	<!-- JSON View -->
+	<bean id="mappingJacksonJsonView" 
+		class="org.springframework.web.servlet.view.json.MappingJacksonJsonView"
+		p:contentType="application/json;charset=UTF-8"
+		p:prefixJson="false"/>
+
+	<!-- Bean Name View Resolver -->
+	<bean id="beanNameViewResolver"
+		class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+
+	<!-- Internal Resource View Resolver -->
+	<bean id="internalResourceViewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+		p:viewClass="org.springframework.web.servlet.view.JstlView"
+		p:prefix="/WEB-INF/jsp/"
+		p:suffix=".jsp"
+		p:contentType="text/html;charset=UTF-8" />
+	
+	<!--  	
+	<bean id="xmlView" class="org.springframework.web.servlet.view.xml.MarshallingView">
+		<constructor-arg>
+			<bean class="org.springframework.oxm.xstream.XStreamMarshaller"/>
+		</constructor-arg>
+	</bean>		
+	-->
+				
+	<!-- view resolver -->
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver"
+		p:mediaTypes-ref="mediaTypes"
+		p:viewResolvers-ref="viewResolvers"
+		p:defaultViews-ref="mappingJacksonJsonView" />
+	
+	<util:map id="mediaTypes">
+		<entry key="atom" value="application/atom+xml"/>
+		<entry key="xml" value="application/xml"/>
+		<entry key="do" value="text/html"/>
+		<entry key="html" value="text/html"/>
+		<entry key="json" value="application/json"/>
+		<entry key="text" value="text/plain" />		
+	</util:map>	
+		
+	<util:list id="viewResolvers">
+		<ref bean="beanNameViewResolver" />
+		<ref bean="internalResourceViewResolver"/>
+	</util:list>
+
+</beans>

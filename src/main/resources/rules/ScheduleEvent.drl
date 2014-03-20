@@ -1,0 +1,98 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.ConversionUtil;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrderStatus;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.ScheduleEvent;
+
+// vstype == 1 이고 WMWorkOrder 가 bt360LogOnOffWorkerId != null && bt360LogOnOffDt != null 이면
+// id : SE_[bt360LogOnOffWorkerId] + [bt360LogOnOffDt] 매핑 또는 UUID 설정, [bt360LogOnOffWorkerId] 를 체크하여 값이 없을 경우 Schedule_Event 생성안함.
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// event_type_id : [bt360LogOnOffState] 매핑
+// event_date_time : [bt360LogOnOffDt] 매핑
+// resource_id : [bt360LogOnOffWorkerId] 매핑
+rule "VS1_ScheduleEvent"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder(bt360LogOnOffWorkerId != null, bt360LogOnOffDt != null)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		scheduleEvent : ScheduleEvent()
+	then
+		scheduleEvent.setId(StringUtil.getUUID());
+		scheduleEvent.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		scheduleEvent.setEventTypeId(order.getBt360LogOnOffState());
+		scheduleEvent.setEventDateTime(order.getBt360LogOnOffDt());
+		scheduleEvent.setResourceId(order.getBt360LogOnOffWorkerId());
+        update(scheduleEvent);
+end
+
+// vstype == 3 이고 WMWorkOrder 가 bt360LogOnOffWorkerId != null && bt360LogOnOffDt != null 이면
+// id : SE_[bt360LogOnOffWorkerId] + [bt360LogOnOffDt] 매핑 또는 UUID 설정, [bt360LogOnOffWorkerId] 를 체크하여 값이 없을 경우 Schedule_Event 생성안함.
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// event_type_id : [bt360LogOnOffState] 매핑
+// event_date_time : [bt360LogOnOffDt] 매핑
+// resource_id : [bt360LogOnOffWorkerId] 매핑
+rule "VS3_ScheduleEvent"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus(bt360LogOnOffWorkerId != null, bt360LogOnOffDt != null)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS3)
+		scheduleEvent : ScheduleEvent()
+	then
+		scheduleEvent.setId(StringUtil.getUUID());
+		scheduleEvent.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		scheduleEvent.setEventTypeId(order.getBt360LogOnOffState());
+		scheduleEvent.setEventDateTime(order.getBt360LogOnOffDt());
+		scheduleEvent.setResourceId(order.getBt360LogOnOffWorkerId());
+        update(scheduleEvent);
+end
+
+// vstype == 4 이고 WMWorkOrder 가 bt360LogOnOffWorkerId != null && bt360LogOnOffDt != null 이면
+// id : SE_[bt360LogOnOffWorkerId] + [bt360LogOnOffDt] 매핑 또는 UUID 설정, [bt360LogOnOffWorkerId] 를 체크하여 값이 없을 경우 Schedule_Event 생성안함.
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// event_type_id : [bt360LogOnOffState] 매핑
+// event_date_time : [bt360LogOnOffDt] 매핑
+// resource_id : [bt360LogOnOffWorkerId] 매핑
+rule "VS4_ScheduleEvent"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus(bt360LogOnOffWorkerId != null, bt360LogOnOffDt != null)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS4)
+		scheduleEvent : ScheduleEvent()
+	then
+		scheduleEvent.setId(StringUtil.getUUID());
+		scheduleEvent.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		scheduleEvent.setEventTypeId(order.getBt360LogOnOffState());
+		scheduleEvent.setEventDateTime(order.getBt360LogOnOffDt());
+		scheduleEvent.setResourceId(order.getBt360LogOnOffWorkerId());
+        update(scheduleEvent);
+end
+
+// vstype == 3A 이고 WMWorkOrder 가 bt360LogOnOffWorkerId != null && bt360LogOnOffDt != null 이면
+// id : SE_[bt360LogOnOffWorkerId] + [bt360LogOnOffDt] 매핑 또는 UUID 설정, [bt360LogOnOffWorkerId] 를 체크하여 값이 없을 경우 Schedule_Event 생성안함.
+// date_time_stamp : Default 값으로 IL Current Time 설정
+// event_type_id : [bt360LogOnOffState] 매핑
+// event_date_time : [bt360LogOnOffDt] 매핑
+// resource_id : [bt360LogOnOffWorkerId] 매핑
+rule "VS3A_ScheduleEvent"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus(bt360LogOnOffWorkerId != null, bt360LogOnOffDt != null)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS3A)
+		scheduleEvent : ScheduleEvent()
+	then
+		scheduleEvent.setId(StringUtil.getUUID());
+		scheduleEvent.setDateTimeStamp(ConversionUtil.getXMLGregorianCalendar());
+		scheduleEvent.setEventTypeId(order.getBt360LogOnOffState());
+		scheduleEvent.setEventDateTime(order.getBt360LogOnOffDt());
+		scheduleEvent.setResourceId(order.getBt360LogOnOffWorkerId());
+        update(scheduleEvent);
+end

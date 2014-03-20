@@ -1,0 +1,255 @@
+<script type="text/javascript">
+
+	Ext.define('Intgl.app.OllehmapLog', {
+		extend: 'Ext.panel.Panel',
+		alias: 'widget.ollehmaplog',
+
+	    initComponent: function() {
+	        var me = this;
+
+		    var dateStore = Ext.create('Ext.data.Store', {
+			    //storeId: 'dateStore',
+			    fields: ['eventDtStr'],
+			    proxy: {
+		            type: 'ajax',
+		            url: '/wfm-intgl/intgl/event/getEventLogDate.json',
+					reader: {
+						type: 'json',
+						root: 'items'
+					}
+				}
+				//, autoLoad: true
+			});
+			
+		    var listStore = Ext.create('Ext.data.Store', {
+			    //storeId: 'listStore',
+		        pageSize: 12,
+			    fields: ['seq','eventId','eventCsctCd','eventOfficeCd','eventAddr','eventLatitude','eventLongitude','eventResult','eventResultSource','eventMsg','eventStartDtStr','eventEndDtStr','eventHostIp']
+			});
+
+			var msgStore = Ext.create('Ext.data.Store', {
+		    	//storeId: 'msgStore',
+			    fields: ['eventDetailMsg']
+			});
+
+			var datePanel = Ext.create('Ext.grid.Panel', {
+				//id : 'date-panel',
+			    title: 'Log Date',
+			    region: 'west',
+		        split: true,
+		        autoScroll: true,
+			    store: dateStore,
+			    columns: [
+			        { text: 'DATE',  dataIndex: 'eventDtStr' }
+			    ],
+			    height: '100%',
+			    width: 100
+			});
+			
+			datePanel.getSelectionModel().on('select', function(selModel, record, index, eOpts) {
+				var dataModel = dateStore.getAt(index);
+                listPanel.down("#searchFromDt").setValue(dataModel.get("eventDtStr"));
+                listPanel.down("#searchFromTm").setValue('00:00:00');
+                //listPanel.down("#searchToDt").setValue(dataModel.get("eventDtStr"));
+                listPanel.down("#searchToTm").setValue('23:59:59');
+				
+				searchList(1);
+			});
+			
+			var searchList = function(page) {
+                var searchFromDt = listPanel.down("#searchFromDt").getRawValue();
+                var searchFromTm = listPanel.down("#searchFromTm").getRawValue();
+                //var searchToDt = listPanel.down("#searchToDt").getRawValue();
+                var searchToDt = listPanel.down("#searchFromDt").getRawValue();
+                var searchToTm = listPanel.down("#searchToTm").getRawValue();
+                var eventId = listPanel.down("#eventId").getValue();
+                var eventCsctCd = listPanel.down("#eventCsctCd").getValue();
+                var eventOfficeCd = listPanel.down("#eventOfficeCd").getValue();
+				var eventAddr = listPanel.down("#eventAddr").getValue();
+				
+				var proxy = new Ext.data.proxy.Ajax({
+					pageSize: 12,
+					type: 'pagingmemory',
+		            url: '/wfm-intgl/intgl/event/getOllehMapLogList.json?searchFromDt=' + searchFromDt + '&searchFromTm=' + searchFromTm + '&searchToDt=' + searchToDt + '&searchToTm=' + searchToTm + '&eventId=' + eventId + '&eventCsctCd=' + eventCsctCd + '&eventOfficeCd=' + eventOfficeCd + '&eventAddr=' + eventAddr,
+					reader: {
+						type: 'json',
+						root: 'items',
+		                totalProperty: 'totalPage'
+					}
+				});
+				me.down('#content-panel').body.update('');
+				listStore.removeAll(false);
+				listStore.setProxy(proxy);
+				listStore.loadPage(page);
+			};
+
+			var listPanel = Ext.create('Ext.grid.Panel', {
+				//id : 'list-panel',
+			    title: 'OllehMap Log List',
+			    region: 'north',
+		        split: true,
+		        autoScroll: true,
+			    store: listStore,
+			    columns: [
+					{text: 'SEQ', dataIndex: 'seq', width: 60 },
+					{text: 'EVENT_ID', dataIndex: 'eventId', width: 60 },
+					{text: 'CSCT_CD', dataIndex: 'eventCsctCd', width: 60 },
+					{text: 'OFFICE_CD', dataIndex: 'eventOfficeCd', width: 60 },
+					{text: 'ADDRESS', dataIndex: 'eventAddr', width: 230 },
+					{text: 'LATITUDE', dataIndex: 'eventLatitude', width: 130 },
+					{text: 'LONGITUDE', dataIndex: 'eventLongitude', width: 130 },
+					{text: 'EVENT_RESULT', dataIndex: 'eventResult' },
+					{text: 'EVENT_RESULT_SOURCE', dataIndex: 'eventResultSource', width: 230 },
+					{text: 'EVENT_MSG', dataIndex: 'eventMsg', width: 230 },
+					{text: 'EVENT_START_DT', dataIndex: 'eventStartDtStr', width: 140 },
+					{text: 'EVENT_END_DT', dataIndex: 'eventEndDtStr', width: 140 },
+					{text: 'EVENT_HOST_IP', dataIndex: 'eventHostIp' }
+			    ],
+			    height: 350,
+			    width: '100%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        Ext.create('Ext.Action',{
+                            text: 'Refresh',
+                            handler: function() {
+                            	searchList(1);
+                            },
+                            iconCls: 'refreshButton'
+                        }),{
+                            xtype: 'label',
+                            text: '조회일시 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'datefield',
+                            itemId: 'searchFromDt',
+                            width: 95,
+                            format: 'Y-m-d',
+                            value: new Date()
+                        },{
+                            xtype: 'timefield',
+                            itemId: 'searchFromTm',
+                            width: 80,
+                            increment: 5,
+                            format: 'H:i:s',
+                            value: new Date((new Date()).getTime() - 60*60*1000)
+                        },{
+                            xtype: 'label',
+                            text: ' ~ ',
+                            margin: '0 0 0 0'
+                        },
+                        /*{
+                            xtype: 'datefield',
+                            itemId: 'searchToDt',
+                            width: 95,
+                            format: 'Y-m-d',
+                            value: new Date()
+                        },*/
+                        {
+                            xtype: 'timefield',
+                            itemId: 'searchToTm',
+                            increment: 5,
+                            width: 80,
+                            format: 'H:i:s',
+                            value: new Date()
+                        },{
+                            xtype: 'label',
+                            text: '이벤트ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventId',
+                            width: 60
+                        },{
+                            xtype: 'label',
+                            text: 'CSCT_CD : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventCsctCd',
+                            width: 60
+                        },{
+                            xtype: 'label',
+                            text: 'OFFICE_CD : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventOfficeCd',
+                            width: 60
+                        },{
+                            xtype: 'label',
+                            text: '주소 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventAddr',
+                            width: 120
+                        }]
+                },
+		        bbar: Ext.create('Ext.PagingToolbar', {
+		            pageSize: 12,
+		            store: listStore,
+		            displayInfo: true,
+		            plugins: Ext.create('Ext.ux.SlidingPager', {})
+		        }),
+                listeners: {
+                    itemdblclick: function(view, record, item, index, e, eOpts) {
+                    	if (record.get('eventMsg').trim().length > 0)
+                        	Ext.Msg.alert('EVENT_MSG', '<pre>'+record.get('eventMsg')+'</pre>');
+                    }
+                }
+			});
+
+			listPanel.getSelectionModel().on('select', function(selModel, record, index, eOpts) {
+				var dataModel = listStore.getAt(index);
+				var proxy = new Ext.data.proxy.Ajax({
+					type: 'direct',
+		            url: '/wfm-intgl/intgl/event/getOllehMapLogDetail.json?seq=' + dataModel.get("seq"),
+					reader: {
+						type: 'json',
+						root: 'items'
+					}
+				});
+				msgStore.setProxy(proxy);
+				msgStore.load(function(records, operation, success) {
+					var bd = me.down('#content-panel').body;
+			        bd.update(msgStore.getAt(0).get("eventDetailMsg"));
+				});
+			});
+
+			var contentPanel = {
+		        itemId: 'content-panel',
+			    title: 'OllehMap Log Detail',
+		        region: 'center', // this is what makes this panel into a region within the containing layout
+		        layout: 'card',
+		        activeItem: 0,
+		        split: true,
+		        autoScroll: true,
+		        border: true,
+		        html: ''
+		    };
+
+	        Ext.apply(me, {
+		        layout: 'border',
+		        items: [
+		    	//datePanel,
+		    	{
+		            layout: 'border',
+		            //id: 'layout-browser',
+		            region:'center',
+		            border: false,
+		            split:true,
+		            margins: '0 0 0 0',
+		            width: '100%',
+		            height: '100%',
+		            items: [listPanel, contentPanel]
+		    	}],
+			});
+	        me.callParent(arguments);
+	    }
+	});
+
+	Ext.getCmp("app-main").getActiveTab().add(Ext.create('widget.ollehmaplog'));
+
+</script>

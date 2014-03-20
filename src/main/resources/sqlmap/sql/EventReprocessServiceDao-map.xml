@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.eventhandler.dao.intgl.EventReprocessServiceDao" >
+
+  <!-- 
+    - TB_WM_EVENTREPROCESS 테이블에 레코드를 추가합니다.
+    -->
+  <insert id="writeEventReprocess" parameterType="EventReprocessVo">
+		INSERT INTO TB_WM_EVENTREPROCESS (
+				EVENT_ID      
+				, REPROCESS_DATA   
+				, LAST_REPROCESS_DT
+		)
+		VALUES  (
+		    #{eventId}
+			, #{reprocessDataBytes,jdbcType=BLOB}
+			, SYSDATE        
+	    )
+  </insert>
+
+  <!-- 
+    - TB_WM_EVENTREPROCESS 테이블의 목록을 조회합니다.
+    -->
+	<select id="selectEventReprocessList" parameterType="EventReprocessVo" resultType="EventReprocessVo">
+		SELECT *
+		FROM (
+			SELECT
+				L.EVENT_ID as eventId,
+				L.EVENT_VSTYPE as eventVsTypeStr,
+				L.EVENT_SOURCEID as eventSourceId,
+				L.EVENT_TYPE as eventTypeStr,
+				L.EVENT_STATUS as eventStatusStr,
+				L.EVENT_ROUTE as eventRoute,
+				L.EVENT_MSG as eventMsg,
+				TO_CHAR(L.EVENT_DT, 'YYYY-MM-DD HH24:MI:SS:FF3') as eventDtStr,
+				L.EVENT_IP as eventIp,
+				L.EVENT_HOST_IP as eventHostIp,
+				L.EVENT_HOST_NAME as eventHostName,
+			    R.REPROCESS_CNT as reprocessCnt,
+			    R.REPROCESS_STATUS as reprocessStatus,
+				TO_CHAR(R.LAST_REPROCESS_DT, 'YYYY-MM-DD HH24:MI:SS') as lastReprocessDtStr,
+				CEIL((ROW_NUMBER() OVER(ORDER BY L.EVENT_ID DESC))/#{searchLimit}) as pageNum,
+				CEIL(COUNT(*) OVER()) as totalPage
+			FROM TB_WM_EVENTLOG L,
+				TB_WM_EVENTLOGDETAIL D,
+				TB_WM_EVENTREPROCESS R
+			WHERE L.EVENT_STATUS IN (4, 5, 6)
+			AND L.EVENT_ID = D.EVENT_ID(+)
+			AND L.EVENT_VSTYPE = D.EVENT_VSTYPE(+)
+			AND L.EVENT_TYPE = D.EVENT_TYPE(+)
+			AND L.EVENT_ID = R.EVENT_ID
+			<if test="@org.springframework.util.StringUtils@hasLength(searchFromDt)">
+				AND L.EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(searchToDt)">
+		    	AND L.EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+			</if>
+			<if test="searchReprocessStatus != null">
+			    AND R.REPROCESS_STATUS = #{searchReprocessStatus}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventIdStr)">
+		    	AND L.EVENT_ID = #{eventIdStr}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventSourceId)">
+		    	AND L.EVENT_SOURCEID = #{eventSourceId}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventVsTypeStr)">
+		    	AND L.EVENT_VSTYPE = #{eventVsTypeStr}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventTypeStr)">
+		    	AND L.EVENT_TYPE = #{eventTypeStr}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventMsg)">
+		    	AND D.MSG LIKE '%'|| #{eventMsg} ||'%'
+			</if>
+		) K
+		WHERE K.pageNum = #{searchPage}
+	</select>
+
+  <!-- 
+    - 조건으로 주어진 eventId 에 해당하는 레코드를 조회합니다.
+     -->   
+  <select id="selectEventReprocess" parameterType="int" resultType="EventReprocessVo">
+		SELECT
+		    EVENT_ID as eventId        
+		    , REPROCESS_CNT as reprocessCnt               
+		    , REPROCESS_STATUS as reprocessStatus      
+		    , REPROCESS_DATA as reprocessDataBytes   
+		    , LAST_REPROCESS_DT as lastReprocessDt      
+		FROM
+		    TB_WM_EVENTREPROCESS
+		WHERE
+			EVENT_ID = #{eventId}
+  </select>
+  
+  <!-- 
+    - 조건으로 주어진 eventId 에 해당하는 레코드의 REPROCESS_CNT 를 update 합니다.
+     --> 
+  <update id="updateEventReprocessCount" parameterType="int" >
+		UPDATE 
+			TB_WM_EVENTREPROCESS
+			SET REPROCESS_CNT = REPROCESS_CNT + 1
+				, LAST_REPROCESS_DT = SYSDATE
+		WHERE EVENT_ID = #{eventId}
+  </update>  
+
+  <!-- 
+    - 조건으로 주어진 eventId 에 해당하는 레코드의 REPROCESS_STATUS 를 update 합니다.
+     --> 
+  <update id="updateEventReprocessStatus" parameterType="EventReprocessVo">
+		UPDATE 
+			TB_WM_EVENTREPROCESS
+			SET REPROCESS_STATUS = #{reprocessStatus}
+				, LAST_REPROCESS_DT = SYSDATE
+		WHERE EVENT_ID = #{eventId}
+  </update>
+
+</mapper>

@@ -1,0 +1,41 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMResourceInfo;
+import com._360scheduling.schema.dssystemdata.DsSystemData.Users;
+
+// vstype == 15D 이면..
+// organisation_id : Default 값으로 1 설정
+// id : [workerId] 매핑
+// name : [workerId] 매핑
+// user_password : Default 값으로 'fbe37b69d1ce0d900332e48dd5ebc78bc97' 설정
+// enable : Default 값으로 true 설정
+// admin_allowed : Default 값으로 false 설정
+// profile_id : Default 값으로 'kt' 설정
+// lower_id : [workerId] 매핑
+// language_id : Default 값으로 ko-KR 설정
+// hash_method : Default 값으로 0 설정
+// force_password_change : Default 값으로 false 설정
+rule "VS15D_Users"
+	dialect "java"
+	no-loop
+	when
+		order : WMResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS15D)
+		users : Users()
+	then
+		users.setOrganisationId("1");
+		users.setId(order.getWorkerId());
+		users.setName(order.getWorkerId());
+		users.setUserPassword("fbe37b69d1ce0d900332e48dd5ebc78bc97");
+		users.setEnable(true);
+		users.setAdminAllowed(false);
+		users.setProfileId("kt");
+		users.setLowerId(order.getWorkerId());
+		users.setLanguageId("ko-KR");
+		users.setHashMethod(0);
+		users.setForcePasswordChange(false);
+        update(users);
+end

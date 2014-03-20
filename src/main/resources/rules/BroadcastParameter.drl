@@ -1,0 +1,151 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.BroadcastParameter;
+
+// vstype == 1 이고 int == 0 이면
+// broadcast_id : (1),(2)모두 [sourceId] 매핑
+// parameter_name : (1) 'WSID' / (2) 'url'
+// parameter_value : (1) '360OUTPUT' / (2) 웹서비스 URL 주소 
+rule "VS1_BroadcastParameter1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId());
+		broadcastParameter.setParameterName("WSID");
+		broadcastParameter.setParameterValue("360OUTPUT");
+        update(broadcastParameter);
+end
+
+// vstype == 1 이고 int == 1 이면
+// broadcast_id : (1),(2)모두 [sourceId] 매핑
+// parameter_name : (1) 'WSID' / (2) 'url'
+// parameter_value : (1) '360OUTPUT' / (2) 웹서비스 URL 주소 
+rule "VS1_BroadcastParameter2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesVo : RulesVo()
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId());
+		broadcastParameter.setParameterName("url");
+		broadcastParameter.setParameterValue(rulesVo.getBroadcastUrl());
+        update(broadcastParameter);
+end
+
+// vstype == 1 이고 int == 3 이면
+// broadcast_id : (1),(2) 모두 [sourceId] + '_workbench' 매핑
+// parameter_name : (1) 'WSID' / (2) 'url' 
+// parameter_value : (1) '360WORKBENCH' / (2) 웹서비스 URL 주소
+rule "VS1_BroadcastParameter4"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 3)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId() + "_workbench");
+		broadcastParameter.setParameterName("WSID");
+		broadcastParameter.setParameterValue("360WORKBENCH");
+        update(broadcastParameter);
+end
+
+// vstype == 1 이고 int == 4 이면
+// broadcast_id : (1),(2) 모두 [sourceId] + '_workbench' 매핑
+// parameter_name : (1) 'WSID' / (2) 'url' 
+// parameter_value : (1) '360WORKBENCH' / (2) 웹서비스 URL 주소
+rule "VS1_BroadcastParameter5"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 4)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesVo : RulesVo()
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId() + "_workbench");
+		broadcastParameter.setParameterName("url");
+		broadcastParameter.setParameterValue(rulesVo.getBroadcastUrl());
+        update(broadcastParameter);
+end
+
+// vstype == 1 이고 int == 6 이면
+// broadcast_id : [sourceId] + '_FILE' 매핑
+// parameter_name : Default 값으로 'file_path' 설정
+// parameter_value : 'C:\360\output\' + [sourceId] 매핑
+rule "VS1_BroadcastParameter7"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 6)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesVo : RulesVo()
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId() + "_FILE");
+		broadcastParameter.setParameterName("file_path");
+		broadcastParameter.setParameterValue("C:\\360\\output\\" + intglVo.getSourceId());
+        update(broadcastParameter);
+end
+
+// vstype == 1 이고 int == 7 이면
+// broadcast_id : [sourceId] + '_DB' 매핑
+// parameter_name : Default 값으로 'file_path' 설정
+// parameter_value : 'C:\360\output\' + [sourceId] +'.xml'  매핑
+rule "VS1_BroadcastParameter8"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 7)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesVo : RulesVo()
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId() + "_DB");
+		broadcastParameter.setParameterName("file_path");
+		broadcastParameter.setParameterValue("C:\\360\\output\\" + intglVo.getSourceId() + ".xml");
+        update(broadcastParameter);
+end
+
+// vstype == 6 이고 int == 0 이면
+rule "VS6_BroadcastParameter1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		rulesVo : RulesVo()
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId() + "_APP");
+		broadcastParameter.setParameterName("WSID");
+		broadcastParameter.setParameterValue("360OUTPUT");
+        update(broadcastParameter);
+end
+
+// vstype == 6 이고 int == 1 이면
+rule "VS6_BroadcastParameter2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		rulesVo : RulesVo()
+		broadcastParameter : BroadcastParameter()
+	then
+		broadcastParameter.setBroadcastId(intglVo.getSourceId() + "_APP");
+		broadcastParameter.setParameterName("url");
+		broadcastParameter.setParameterValue(rulesVo.getBroadcastUrl());
+        update(broadcastParameter);
+end

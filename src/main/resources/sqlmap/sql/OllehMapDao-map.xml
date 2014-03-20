@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.datamapper.dao.intgl.OllehMapDao" >
+
+  <!-- 
+    - 국사의 OFFICE CD 에 맵핑되는 위경도를 가져옵니다.
+    -->
+  <select id="selectMappingOfficeExt" parameterType="WMMappingOfficeExtVo" resultType="WMMappingOfficeExtVo">
+		SELECT   LATITUDE, LONGITUDE
+		FROM     TB_WM_MAPPINGOFFICEEXT
+		WHERE    OFFICE_CD = #{searchOfficeCd}
+		AND (LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL)
+		AND ROWNUM = 1
+  </select>
+  
+  <!-- 
+    - 동 Code 에 맵핑되는 위경도를 가져옵니다.
+    -->
+  <select id="selectMappingBjsCode" parameterType="WMMappingBjsCodeVo" resultType="WMMappingBjsCodeVo">
+		SELECT   LATITUDE, LONGITUDE
+		FROM     TB_WM_MAPPINGDONGCODE
+		WHERE    DONGCODE = #{searchDongCode}
+		AND (LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL)
+		AND ROWNUM = 1
+  </select>  
+  
+  <insert id="insertOfficeExtTemp" parameterType="WMMappingBjsCodeVo">
+  		INSERT INTO TB_WM_MAPPINGOFFICEEXT_TEMP (
+  		    SEQ
+  			, OFFICE_CD
+  			, OFFICE_NM
+  			, DONGCODE
+  			, FULLADDR
+  			, LATITUDE
+  			, LONGITUDE
+  		)
+  		VALUES (
+  			#{seq, jdbcType=INTEGER}
+  			, #{officeCd, jdbcType=VARCHAR}
+  			, #{officeNm, jdbcType=VARCHAR}
+  			, #{dongCode, jdbcType=VARCHAR}
+  			, #{fullAddr, jdbcType=VARCHAR}
+  			, #{latitude, jdbcType=INTEGER}
+  			, #{longitude, jdbcType=INTEGER}
+  		)
+  </insert>
+</mapper>
+
+

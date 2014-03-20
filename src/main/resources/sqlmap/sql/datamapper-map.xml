@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.datamapper.dao.intgl.DataMapperDao" >
+
+	<!-- Activity : activity_type_id -->
+	<!-- Activity_SLA : sla_type_id -->
+	<select id="selectMappingOdrType" parameterType="ActivityTypeVo" resultType="ActivityTypeVo"> 
+		SELECT 
+			THREESIXTYODR_TYPE as threesixtyodrType,
+			WORK_TYPE as workType,
+			SVC_TYPE as svcType,
+			COMPANY_TYPE as companyType,
+			SPECIAL_CD as specialCd,
+			VVIPYN as vvipyn,
+			DURATION as duration,
+			CT_VALUE as ctValue,
+			CHANGE_DT as changeDt
+		FROM TB_WM_MAPPINGODRTYPE
+		WHERE WORK_TYPE = #{workType}
+		AND SVC_TYPE = #{svcType}
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isEmpty(companyType) ">AND COMPANY_TYPE is null</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(companyType) ">AND COMPANY_TYPE = #{companyType}</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isEmpty(specialCd) ">AND SPECIAL_CD is null</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(specialCd) ">AND SPECIAL_CD = #{specialCd}</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isEmpty(vvipyn) ">AND VVIPYN is null</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(vvipyn) ">AND VVIPYN = #{vvipyn}</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isEmpty(techMethod) ">AND TECH_METHOD is null</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(techMethod) ">AND TECH_METHOD = #{techMethod}</if>
+		AND ROWNUM = 1
+	</select>
+	<!--
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isEmpty(companyType) ">AND COMPANY_TYPE is null</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(companyType) ">AND COMPANY_TYPE = #{companyType}</if>
+	 -->
+		
+	<!-- Activity_Status : status_id -->
+	<select id="selectActivityStatusId" parameterType="ActivityStatusVo" resultType="ActivityStatusVo"> 
+		SELECT
+			MAP_ID as mapId,
+			STATUS_CD as statusCd,
+			COMPLETE_CD as completeCd,
+			ADDITIONAL_CD as additionalCd,
+			THREESIXTYSTATUS_CD as threesixtystatusCd,
+			STATUS_NM as statusNm,
+			CHANGE_DT as changeDt
+		FROM TB_WM_MAPPINGSTATUS
+		WHERE STATUS_CD = #{statusCd}
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(completeCd) ">AND COMPLETE_CD = #{completeCd}</if>
+		<if test="@com.kt.oss.wmIntgl.common.utils.StringUtil@isNotEmpty(additionalCd) ">AND ADDITIONAL_CD = #{additionalCd}</if>
+		AND ROWNUM = 1
+	</select>
+	
+	<!-- WMWorkOrderResource : workProgState, workProcState, bt360AddWorkProgState -->
+	<select id="selectWMWorkOrderState" parameterType="int" resultType="WorkOrderStateVo"> 
+		SELECT
+			MAP_ID as mapId,
+			STATUS_CD as statusCd,
+			COMPLETE_CD as completeCd,
+			ADDITIONAL_CD as additionalCd,
+			THREESIXTYSTATUS_CD as threesixtystatusCd,
+			STATUS_NM as statusNm,
+			CHANGE_DT as changeDt
+		FROM TB_WM_MAPPINGSTATUS
+		WHERE THREESIXTYSTATUS_CD = #{statusId}
+		AND ROWNUM = 1
+	</select>
+	
+	<!-- Input_Reference : datasetId -->
+	<select id="selectCSCTId" parameterType="String" resultType="String"> 
+		SELECT 
+			CSCT_CD as csctCd
+		FROM TB_WM_MAPPINGOFFICEEXT
+		WHERE OFFICE_CD = #{officeScode}
+		AND ROWNUM = 1
+	</select>
+	
+	<!-- WMAppointmentOffer : datasetId -->
+	<select id="selectReasonType" parameterType="int" resultType="String"> 
+		SELECT
+			DESCRIPTION as description
+		FROM TB_WM_MAPPINGREASONTYPE
+		WHERE ID = #{reasonTypeId}
+	</select>
+	
+	<!-- InputReference, SourceData, SourceDataParameter -->
+	<select id="selectMappingType" parameterType="String" resultType="MappingTypeVo"> 
+		SELECT 
+			VSTYPE as vsType,
+			DSTYPE as dsType,
+			TSTYPE as tsType,
+			IRTIME as irTime
+		FROM TB_WM_MAPPINGINPUTREFERENCE
+		WHERE VSTYPE = #{vsType}
+		AND ROWNUM = 1
+	</select>
+	
+	<!-- ActivitySLA -->
+	<select id="selectActivitySlaConfig" parameterType="String" resultType="ActivitySlaConfigVo"> 
+		SELECT
+			OFFICE_CD as officeCd,
+			AM_EA as amEa,
+			AM_ET as amEt,
+			AM_SE as amSe,
+			PM_EA as pmEa,
+			PM_ET as pmEt,
+			PM_SE as pmSe,
+			NT_EA as ntEa,
+			NT_ET as ntEt,
+			NT_SE as ntSe,
+			CHANGE_DT as changeDt
+		FROM TB_WM_MAPPINGSLACONFIG
+		WHERE OFFICE_CD IN (
+			SELECT OFFICE_CD
+			FROM TB_WM_MAPPINGOFFICEEXT
+			WHERE CSCT_CD = #{csctCd})
+	</select>
+	
+	<!-- RAM_Resource : memo -->
+	<select id="selectGradeName" parameterType="String" resultType="String"> 
+		SELECT
+			GRD_NM as grdNm
+		FROM TB_WM_MAPPINGWORKERGRADE
+		WHERE GRD_CD = #{grdCd}
+	</select>
+	
+	<!-- Activity : description -->
+	<select id="selectOfficeName" parameterType="String" resultType="String"> 
+		SELECT
+			ORG_NM as orgNm
+		FROM TB_WM_MAPPINGOFFICE
+		WHERE ORG_CD = #{orgCd}
+	</select>
+	
+	<!-- RAMUnavailability, RAMTimePattern -->
+	<select id="selectTPRog" parameterType="TPRogVo" resultType="TPRogVo"> 
+		SELECT
+			TPROG as tprog,
+			TTEXT as ttext,
+			DESCRIPTION as description,
+			USE_YN as useYn,
+			BASE_TIME as baseTime,
+			DURATION as duration,
+			CHANGE_DT as changeDt
+		FROM TB_WM_MAPPINGTPROG
+	</select>
+	
+	<!-- RAMUnavailability, RAMTimePattern -->
+	<select id="selectOfficeScodeTrans" parameterType="OfficeTransVo" resultType="OfficeTransVo"> 
+		SELECT
+			SOURCE_CD as sourceCd,
+			TARGET_CD as targetCd
+		FROM TB_WM_MAPPINGOFFICETRANS
+	</select>
+
+</mapper>
