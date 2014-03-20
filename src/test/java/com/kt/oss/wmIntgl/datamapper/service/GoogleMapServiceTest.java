@@ -64,7 +64,7 @@ public class GoogleMapServiceTest {
 		sampleData = new ArrayList<String>();
 		sampleData.add("서울특별시 영등포구 문래동3가 55-20");  //에이스하이테크시티 주소
 		sampleData.add("울특별시 영포구 문동3가 55-20");       //잘못된 입력된 주소
-		sampleData.add(" ");                                //빈값 입력
+		//sampleData.add(" ");                                //빈값 입력
 	}
 	
 	@Test
