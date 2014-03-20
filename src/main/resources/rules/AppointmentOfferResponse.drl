@@ -1,0 +1,38 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.AppointmentOfferResponse;
+
+// vstype == 6B 이면
+// Appointment_request_id : [appointmentRequestId] 매핑
+// Appointment_offer_id : default null 설정 (태그안만들어 지면 더 좋음)
+rule "VS6B_AppointmentOfferResponse"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6B)
+		appointmentOfferResponse : AppointmentOfferResponse()
+	then
+		appointmentOfferResponse.setAppointmentRequestId(intglVo.getAppointmentRequestId());
+		appointmentOfferResponse.setAppointmentOfferId(-1);
+        update(appointmentOfferResponse);
+end
+
+// vstype == 6C 이면
+// Appointment_request_id : [appointmentRequestId] 매핑
+// Appointment_offer_id : [offerId] 매핑
+rule "VS6C_AppointmentOfferResponse"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		appointmentOfferResponse : AppointmentOfferResponse()
+	then
+		appointmentOfferResponse.setAppointmentRequestId(intglVo.getAppointmentRequestId());
+		appointmentOfferResponse.setAppointmentOfferId(order.getOfferId());
+        update(appointmentOfferResponse);
+end

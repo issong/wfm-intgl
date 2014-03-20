@@ -1,0 +1,17 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import java.util.ArrayList;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.Rules._Rules;
+
+rule "intgl_rule_vs14d"
+	dialect "java"
+	no-loop
+	when
+		drlList : ArrayList()
+	then
+		drlList.add(_Rules.RAMUpdate);
+		drlList.add(_Rules.RAMResource);
+		drlList.add(_Rules.RAMResourceDivision);
+        update(drlList);
+end

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.integration.appointment2intgl.provider.dao.bt360.WMAppointment360Dao" >
+
+    <!-- 
+      - 360 ALLOCATION 테이블을 조회합니다.
+      -->   	
+	<select id="selectAllocation" parameterType="string" resultType="WMVisitScheduleResponse">
+        SELECT /*+ INDEX_DESC(ALLOCATION PK_ALLOCATION)  */
+               TO_CHAR(ACTIVITY_START, 'YYYY-MM-DD HH24:MI:SS.FF3') as startDt
+               , TO_CHAR(ACTIVITY_END, 'YYYY-MM-DD HH24:MI:SS.FF3') as endDt
+        FROM     ALLOCATION
+        WHERE    ACTIVITY_ID = #{appointmentRequestId}
+                 AND ORGANISATION_ID = '1'
+                 AND PLAN_ID &gt; -9999
+                 AND ROWNUM = 1
+    </select>
+    
+  <!-- 
+    - 360 예약결과 테이블을 조회합니다.
+    -->
+  <select id="selectWMAppointmentOffer" parameterType="WMAppointmentOfferParamVo" resultType="WMAppointmentOfferParam">
+        SELECT
+            APPOINTMENT_REQUEST_ID          as appointmentRequestId           
+            , ID            as offerId            
+            , TO_CHAR(OFFER_START_DATETIME, 'YYYY-MM-DD HH24:MI:SS')||'.000'      as offerStartDt      
+            , TO_CHAR(OFFER_END_DATETIME, 'YYYY-MM-DD HH24:MI:SS')||'.000'        as offerEndDt        
+            , TO_CHAR(OFFER_VALUE, 'FM9999990')        as offerValue          
+            , AVAILABLE           as available            
+            , REASON_TYPE_ID    as reasonType 
+            , PLAN_ID as planId
+        FROM (
+               SELECT
+                    APPOINTMENT_REQUEST_ID        
+                    , ID   
+                    , OFFER_START_DATETIME + 9/24 AS OFFER_START_DATETIME
+                    , OFFER_END_DATETIME + 9/24 AS OFFER_END_DATETIME    
+                    , TRUNC(OFFER_VALUE) AS OFFER_VALUE
+                    , AVAILABLE      
+                    , REASON_TYPE_ID
+                    , PLAN_ID
+                    , RANK() OVER (PARTITION BY APPOINTMENT_REQUEST_ID ORDER BY PLAN_ID DESC) RN    
+                FROM
+                    APPOINTMENT_OFFER
+                WHERE
+                    APPOINTMENT_REQUEST_ID = #{searchAppointmentRequestId}
+                    AND ORGANISATION_ID = 1
+                    AND DATASET_ID = #{searchCsctId}
+                    AND DELETE_FLAG = 0
+        ) A
+        WHERE A.RN = 1
+        ORDER BY OFFER_START_DATETIME
+  </select>
+
+    <!--
+      - 360 Activity 예약관련 테이블을 조회합니다.
+      -->
+    <select id="selectActivityAndOthers" parameterType="string" resultType="WMAppointmentResource">
+        WITH SLA AS (SELECT * FROM ACTIVITY_SLA)
+        SELECT   A.ID					as "activity.id"
+        , A.ACTIVITY_CLASS_ID			as "activity.activityClassId"
+        , A.ACTIVITY_TYPE_ID				as "activity.activityTypeId"
+        , A.LOCATION_ID					as "activity.locationId"
+        , A.PRIORITY					as "activity.priority"
+        , A.SPLIT_ALLOWED				as "activity.splitAllowed"
+        , A.DESCRIPTION					as "activity.description"
+        , A.DO_ON_SITE					as "activity.doOnSite"
+        , A.DATE_TIME_CREATED			as "activity.dateTimeCreated"
+        , A.EXTERNAL_REF					as "activity.externalRef"
+        , A.DATE_TIME_OPEN				as "activity.dateTimeOpen"
+        , A.INTERRUPT					as "activity.interrupt"
+        , A.COST_OF_SPLIT				as "activity.costOfSplit"
+        , A.DO_ON_LOCATION_INCENTIVE		as "activity.doOnLocationIncentive"
+        , A.SERVICE_LEVEL				as "activity.serviceLevel"
+        , B.SLA_TYPE_ID					as "activity_SLA.slaTypeId"
+        , B.ACTIVITY_ID					as "activity_SLA.activityId"
+        , B.DATETIME_START				as "activity_SLA.datetimeStart"
+        , B.DATETIME_END					as "activity_SLA.datetimeEnd"
+        , B.PRIORITY					as "activity_SLA.priority"
+        , B.START_BASED					as "activity_SLA.startBased"
+        , B1.SLA_TYPE_ID					as "activity_SLA1.slaTypeId"
+        , B1.ACTIVITY_ID				as "activity_SLA1.activityId"
+        , B1.DATETIME_START				as "activity_SLA1.datetimeStart"
+        , B1.DATETIME_END				as "activity_SLA1.datetimeEnd"
+        , B1.PRIORITY					as "activity_SLA1.priority"
+        , B1.START_BASED					as "activity_SLA1.startBased"
+        , C.ACTIVITY_ID					as "activityStatus.activityId"
+        , C.STATUS_ID					as "activityStatus.statusId"
+        , C.DATE_TIME_STATUS				as "activityStatus.dateTimeStatus"
+        , C.VISIT_ID					as "activityStatus.visitId"
+        , C.FIXED						as "activityStatus.fixed"
+        , C.RESOURCE_ID					as "activityStatus.resourceId"
+        , C.DATE_TIME_STAMP				as "activityStatus.dateTimeStamp"
+        , C.DURATION					as "activityStatus.duration"
+        , C.MEMO							as "activityStatus.memo"
+        , D.ID							as "location.id"
+        , D.ADDRESS_LINE1				as "location.addressLine1"
+        , D.LOCATION_TYPE_ID				as "location.locationTypeId"
+        , D.LATITUDE						as "location.latitude"
+        , D.LONGITUDE					as "location.longitude"
+        , D.LOCALITY					as "location.locality"
+        , E.REGION_ID					as "locationRegion.regionId"
+        , E.LOCATION_ID					as "locationRegion.locationId"
+        , F.ID							as "additionalAttribute.id"
+        , F.ACTIVITY_ID					as "additionalAttribute.activityId"
+        , F.LABEL						as "additionalAttribute.label"
+        , F.SEQUENCE						as "additionalAttribute.sequence"
+        , F.LABEL_VALUE					as "additionalAttribute.labelValue"
+        , F.DATA_TYPE					as "additionalAttribute.dataType"
+        FROM  ACTIVITY A
+        INNER JOIN (SELECT     ACTIVITY_ID, SUM(DELETE_FLAG), MAX(INPUT_REFERENCE_INTERNAL_ID) AS INTERNAL_ID
+        FROM       ACTIVITY_SLA
+        WHERE      DATASET_ID = #{csctId}
+        AND (ACTIVITY_ID LIKE '1%' OR ACTIVITY_ID LIKE '2%')
+        AND LENGTH(ACTIVITY_ID) &lt; 32
+        AND DATETIME_START &gt; SYSDATE + 2 + 9 / 24
+        GROUP BY   ACTIVITY_ID
+        HAVING     SUM(DELETE_FLAG) &lt; 1) X
+        ON A.ID = X.ACTIVITY_ID
+        AND A.INPUT_REFERENCE_INTERNAL_ID = X.INTERNAL_ID
+        INNER JOIN SLA B
+        ON B.ACTIVITY_ID = X.ACTIVITY_ID
+        AND B.INPUT_REFERENCE_INTERNAL_ID = X.INTERNAL_ID
+        AND B.SLA_TYPE_ID &lt;&gt; 'Double_SLA'
+        INNER JOIN SLA B1
+        ON B1.ACTIVITY_ID = X.ACTIVITY_ID
+        AND B1.INPUT_REFERENCE_INTERNAL_ID = X.INTERNAL_ID
+        AND B1.SLA_TYPE_ID = 'Double_SLA'
+        INNER JOIN ACTIVITY_STATUS C
+        ON C.ACTIVITY_ID = X.ACTIVITY_ID
+        AND C.INPUT_REFERENCE_INTERNAL_ID = X.INTERNAL_ID
+        INNER JOIN LOCATION D
+        ON D.INPUT_REFERENCE_INTERNAL_ID = X.INTERNAL_ID
+        INNER JOIN LOCATION_REGION E
+        ON E.INPUT_REFERENCE_INTERNAL_ID = X.INTERNAL_ID
+        AND E.LOCATION_ID = D.ID
+        LEFT JOIN ADDITIONAL_ATTRIBUTE F
+        ON F.INPUT_REFERENCE_INTERNAL_ID = B.INPUT_REFERENCE_INTERNAL_ID
+        AND F.ACTIVITY_ID = B.ACTIVITY_ID
+        AND F.LABEL = 'concurrent_num'
+        WHERE    A.DATASET_ID = #{csctId}
+        AND A.ORGANISATION_ID = '1'
+        AND B.DELETE_FLAG = 0
+        AND B1.DELETE_FLAG = 0
+    </select>
+</mapper>

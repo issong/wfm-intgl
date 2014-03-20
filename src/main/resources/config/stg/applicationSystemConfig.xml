@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<properties>
+
+	<comment>Content Default Configuration</comment>
+
+	<!-- JDBC Pool Setting -->
+    <entry key="jdbc.pool.initialSize">50</entry>
+    <entry key="jdbc.pool.maxActive">100</entry>
+    <entry key="jdbc.pool.maxIdle">30</entry>
+    <entry key="jdbc.pool.minIdle">10</entry>
+
+    <entry key="jdbc.pool.360.initialSize">10</entry>
+    <entry key="jdbc.pool.360.maxActive">50</entry>
+    <entry key="jdbc.pool.360.maxIdle">15</entry>
+    <entry key="jdbc.pool.360.minIdle">10</entry>
+	
+    <!-- DB Instance  -->
+    <entry key="db.driver">oracle.jdbc.driver.OracleDriver</entry>
+    <entry key="db.wfm.url">jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=10.217.215.44)(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=10.217.215.45)(PORT=1521))(LOAD_BALANCE=yes)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=ISI1WMS)))</entry>
+    <entry key="db.wfm.username">intgl</entry>
+    <entry key="db.wfm.password">intgl</entry>
+
+    <!-- DB Instance  360 -->
+    <entry key="db.360.url">jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=10.217.215.44)(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=10.217.215.45)(PORT=1521))(LOAD_BALANCE=yes)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=ISI1WMS)))</entry>
+    <entry key="db.360.username">360</entry>
+    <entry key="db.360.password">Sh33p15h</entry>
+
+    <!-- Olleh Map API Url -->
+    <entry key="ollehmap.url.localsearch">http://14.63.240.31:10080/v2/search/LocalSearch.xml</entry>
+    <entry key="ollehmap.url.coordconv">http://14.63.240.31:10080/v1/search/CoordConv.xml</entry>
+    <entry key="ollehmap.appkey">ZxYya68EVN645D4J</entry>
+    <entry key="ollehmap.testMode">false</entry>
+    <entry key="ollehmap.timeout.connection">20000</entry>
+    <entry key="ollehmap.timeout.socket">30000</entry>
+    <entry key="ollehmap.clienttype">HttpClient_POST</entry>
+    <entry key="ollehmap.loggingEnabled">true</entry>
+    <entry key="ollehmap.loglevel">UpToDongTable</entry>
+    <entry key="ollehmap.writedetail">true</entry>
+        
+    <!-- System Type Setting -->
+    <entry key="system.envtype">T</entry>
+        
+    <!-- WebService URL -->
+    <entry key="neoss.url.webservice">http://147.6.48.221/Ws/Wm/BT360Scheduler/BT360Process/Receive360Result.asmx?wsdl</entry>
+    <entry key="scheduler.url.webservice">http://{0}/360WebInterface/services.asmx?wsdl</entry>
+
+    <!-- 360 I/O Server IP -->
+    <entry key="mapping360io.defaultIP">10.217.215.49</entry>
+    
+    <!-- Broadcast Parameter URL -->
+    <entry key="broadcastparameter.url">http://10.217.215.126:8080/wfm-intgl/ws/SchedulerWS?wsdl</entry>
+
+    <!-- WMAppointmentServiceProvider DB Polling Interval -->
+    <entry key="appointmentservice.pollinginterval">10</entry>
+    <entry key="appointmentservice.termmillisecond">500</entry>
+
+    <!-- Daily Notification for Sycros -->
+    <entry key="notification.host">10.217.215.115</entry>
+    <entry key="notification.port">8280</entry>
+    <entry key="notification.instance">wfmSvrB1</entry>
+    <entry key="notification.logfilepath">/applog/jboss/wfmSvrB1/notification/daybreak.log</entry>
+    <entry key="notification.url">/wfm-intgl/intgl/event/runEventSavedprocess.json</entry>
+
+    <!-- VS3, VS8, VS10 pending senario -->
+    <entry key="pendingsenario.enabled">true</entry>
+    <entry key="pendingsenario.termmillisecond">10</entry>
+
+    <!-- VS1 전송시 예약 재전송 senario -->
+    <entry key="appointmentsenario.enabled">false</entry>
+
+	<!-- Drools load setting (true : preload, false : realtime load) -->
+    <entry key="drools.preload.enabled">true</entry>
+    
+    <!-- Java mail -->
+	<entry key="mail.host">smtp.gmail.com</entry>
+	<entry key="mail.tls_starttls.port">587</entry>
+	<entry key="mail.ssl.port">465</entry>
+	<entry key="mail.userName">jongpilkong1@gmail.com</entry>
+	<entry key="mail.password"></entry>
+	<entry key="mail.from">jongpilkong1@gmail.com</entry>
+	<entry key="mail.to">raking@paran.com</entry>
+
+</properties>

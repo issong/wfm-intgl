@@ -1,0 +1,505 @@
+<script type="text/javascript">
+
+    var boardterm = 10;
+    var boardIntervalRun;
+    var boardIntervalPressed = false;
+
+    var boardRefreshTask = {
+        run: function(){
+            console.log("boardRefreshTask run");
+            var btn = Ext.getCmp("boardRefreshAction");
+            btn.fireEvent('click', btn);
+        },
+        interval: 10000
+    };       
+
+    var csctStoreBoard = Ext.create('Ext.data.Store', {
+        storeId: 'csctStoreBoard',
+        fields: ['csctId','csctNm'],
+        proxy: {
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getCsctList.json',
+            reader: {
+                type: 'json',
+                root: 'items'
+            }
+        }
+    });
+    
+    var sumStoreBoard = Ext.create('Ext.data.Store', {
+        storeId: 'sumStoreBoard',
+        fields: ['csctNm','vs1DataSize','vs14bDataSize','vs14cDataSize','csctId'],
+        proxy: {
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getEventBoardSumList.json',
+            reader: {
+                type: 'json',
+                root: 'items'
+            }
+        }
+    });
+    
+    var countStoreBoard = Ext.create('Ext.data.Store', {
+        storeId: 'countStoreBoard',
+        fields: ['vsType','totalCount','succCount','failCount','procCount','standbyCount','reprocessCount','savedCount','eventDt'],
+        proxy: {
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getEventBoardCountList.json',
+            reader: {
+                type: 'json',
+                root: 'items'
+            }
+        }
+    });
+
+    var listStoreBoard = Ext.create('Ext.data.Store', {
+        storeId: 'listStoreBoard',
+        fields: ['eventStatusCode','eventStartDt','eventLastDt','eventSourceId','eventVsTypeStr','eventTypeStr','eventDataSize','intervalDt','eventStatusStr','eventMsg','eventRoute','eventHostIp','eventHostName','eventIp','eventId'],
+        proxy: {
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getEventStatusSearch.json',
+            reader: {
+                type: 'json',
+                root: 'items'
+            }
+        }
+    });
+
+    Ext.define('Intgl.app.EventBoard', {
+        extend: 'Ext.panel.Panel',
+        alias: 'widget.eventboard',
+        
+        initComponent: function() {
+            var me = this;
+
+            var sumPanel = Ext.create('Ext.grid.Panel', {
+                title: false,
+                region: 'center',
+                activeItem: 0,
+                itemId: 'boardSumPanel',
+                split: true,
+                autoScroll: true,
+                columnLines: true,
+                store: sumStoreBoard,
+                columns: [
+                    {text: 'CSCT', dataIndex: 'csctNm', width: 120, style:'text-align:center', align:'center' },       
+                    {text: 'VS1',   dataIndex: 'vs1DataSize', width: 90, style:'text-align:center', align:'right', xtype : 'gridcolumn', renderer: me.helpRenderer },  
+                    {text: 'VS14B', dataIndex: 'vs14bDataSize', width: 90, style:'text-align:center', align:'right', xtype : 'gridcolumn', renderer: me.helpRenderer },
+                    {text: 'VS14C', dataIndex: 'vs14cDataSize', width: 90, style:'text-align:center', align:'right', xtype : 'gridcolumn', renderer: me.helpRenderer }
+                ],
+                height: '100%',
+                width: '35%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        {
+                            xtype: 'label',
+                            html: '<span style="font-size: 11px;font-weight:bold;color:#04408C">[ CSCT별 데이터 건수 / Dispatch 여부 ]</span>',
+                            margin: '0 6 6 8'
+                        }
+                    ]
+                },
+                listeners: {
+                    cellclick: function(view, td, cellIndex, record, tr, rowIndex, e, eOpts ) {
+                        var csctId = sumStoreBoard.getAt(rowIndex).get('csctId');
+                        me.down("#csctId").setValue(csctId);
+                        me.down("#csctId").fireEvent('select', me.down("#csctId"), [{data:{csctId: csctId}}]);
+
+                        if (cellIndex < 1) return;
+                        
+                        var vsType = '';
+                        if (cellIndex == 1) vsType = 'VS1';
+                        if (cellIndex == 2) vsType = 'VS14B';
+                        if (cellIndex == 3) vsType = 'VS14C';
+                        
+                        listPanel.setTitle('Event Status List [CSCT_NM=' + sumStoreBoard.getAt(rowIndex).get('csctNm') + ', VSTYPE=' + vsType + ']');
+
+                        listStoreBoard.load({params: {csctId: csctId, vsType: vsType, searchFromDt: me.down("#searchFromDt").getRawValue(), searchToDt: me.down("#searchFromDt").getRawValue()}});
+                    }
+                }
+            });
+
+            var countPanel = Ext.create('Ext.grid.Panel', {
+                title: false,
+                region: 'east',
+                activeItem: 0,
+                split: true,
+                autoScroll: true,
+                columnLines: true,
+                store: countStoreBoard,
+                columns: [
+                    {text: 'VS TYPE',      dataIndex: 'vsType', width: 80, style:'text-align:center', align:'center' },  
+                    {text: 'TOTAL', dataIndex: 'totalCount', width: 85, style:'text-align:center', align:'right' },  
+                    {text: 'SUCCESS',  dataIndex: 'succCount', width: 85, style:'text-align:center', align:'right' },  
+                    {text: 'FAIL',  dataIndex: 'failCount', width: 85, style:'text-align:center', align:'right', xtype : 'gridcolumn', renderer: me.helpTagRenderer },
+                    {text: 'PROCESSING',  dataIndex: 'procCount', width: 85, style:'text-align:center', align:'right' },
+                    {text: 'REPROCESS',  dataIndex: 'reprocessCount', width: 85, style:'text-align:center', align:'right' },
+                    {text: 'SAVED PROCESS',  dataIndex: 'savedCount', width: 90, style:'text-align:center', align:'right' },
+                    {text: 'LAST EVENT TIME',  dataIndex: 'eventDt', width: 140, style:'text-align:center', align:'left' }
+                ],
+                height: '100%',
+                width: '65%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        {
+                            xtype: 'label',
+                            html: '<span style="font-size: 11px;font-weight:bold;color:#04408C">[ VS별 호출 건수 ]</span>',
+                            margin: '0 10 0 8'
+                        },
+                        {
+                            xtype: 'label',
+                            text: 'CSCT_ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'combo',
+                            itemId: 'csctId',
+                            editable: false,
+                            forceSelection: true,
+                            width: 130,
+                            queryMode: 'local',
+                            displayField: 'csctNm',
+                            valueField: 'csctId',
+                            store: csctStoreBoard,
+                            listeners: {
+                                afterrender: function(component, eOpts) {
+                                    csctStoreBoard.load(function(records, operation, success) {
+                                        component.setValue('A');
+                                    });
+                                },
+                                
+                                select: function(thisObj, records, eOpts) {
+                                    if(records && records.length > 0) {
+                                        var selObj = records[0].data;
+                                        countStoreBoard.load({params: {searchFromDt: me.down("#searchFromDt").getRawValue(), searchToDt: me.down("#searchFromDt").getRawValue(), csctId: selObj.csctId}});                                          
+                                    }
+                                }, 
+                            }
+                        },
+                        Ext.create('Ext.Button',{
+                            text: 'Click to Run Saved process',
+                            id: 'boardAction',
+                            listeners: {
+                                click: function() {
+                                    var csctId = countPanel.down("#csctId").getValue();
+                                    if (csctId == 'A') {
+                                        Ext.Msg.alert('Message', 'CSCT_ID를 선택하세요.');
+                                        return;
+                                    }
+                                    
+                                    // 대상건수 체크
+                                    var isdata = false;
+                                    for (var i = 0; i < countStoreBoard.getCount(); i++) {
+                                        if (countStoreBoard.getAt(i).get('savedCount') > 0) {
+                                            isdata = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!isdata) {
+                                        Ext.Msg.alert('Message', '처리할 대상이 없습니다.');
+                                        return;
+                                    }
+                                    
+                                    Ext.Ajax.request({
+                                        url: '/wfm-intgl/intgl/event/callEventSavedprocess.json',
+                                        method: 'GET',
+                                        params: {
+                                            csctId: csctId
+                                        },
+                                        success: function(response, opts) {
+                                            var obj = Ext.decode(response.responseText);
+                                            if (obj.items.result == 0) {
+                                                Ext.Msg.alert('Message', '처리할 대상이 없습니다.');
+                                            } else if (obj.items.result == 1) {
+                                                Ext.Msg.alert('Message', '처리중 오류가 발생했습니다.');
+                                            } else if (obj.items.result == 2) {
+                                                Ext.Msg.alert('Message', '처리요청이 완료되었습니다. (Refresh 버튼 클릭시 진행상황 확인)');
+                                            } else {
+                                                Ext.Msg.alert('Message', '오류코드 : ' + obj.items.result);
+                                            }
+                                            me.searchAll(false, true);
+                                        },
+                                        failure: function(response, opts) {
+                                            alert('통신중 오류가 발생했습니다.');
+                                        }
+                                    });
+                                }
+                            },
+                            iconCls: 'processButton'
+                        }),
+                        {xtype: 'tbspacer', width: 20},
+                        Ext.create('Ext.Button',{
+                            text: 'Click to clear Caches',
+                            listeners: {
+                                click: function() {
+                                    Ext.Ajax.request({
+                                        url: '/wfm-intgl/intgl/event/clearCaches.json',
+                                        method: 'GET',
+                                        params: {},
+                                        success: function(response, opts) {
+                                            alert('Success.');
+                                        },
+                                        failure: function(response, opts) {
+                                            alert('통신중 오류가 발생했습니다.');
+                                        }
+                                    });
+                                }
+                            },
+                            iconCls: 'processButton'
+                        })
+                    ]
+                },
+                listeners: {
+                    cellclick: function(view, td, cellIndex, record, tr, rowIndex, e, eOpts ) {
+                        if (cellIndex < 3 || cellIndex > 5) return;
+                        
+                        var vsType = countStoreBoard.getAt(rowIndex).get('vsType');
+                        var eventStatus = ''; // F(fail),P(processing),B(standby)
+                        var eventStatusText = '';
+                        if (cellIndex == 3) {eventStatus = 'F'; eventStatusText = 'FAIL';}
+                        if (cellIndex == 4) {eventStatus = 'P'; eventStatusText = 'PROCESSING';}
+                        if (cellIndex == 5) {eventStatus = 'R'; eventStatusText = 'REPROCESS';}
+                        //if (cellIndex == 5) {eventStatus = 'B'; eventStatusText = 'STANDBY';}
+                        
+                        listPanel.setTitle('Event Status List [VSTYPE=' + vsType + ', STATUS=' + eventStatusText + ']');
+
+                        listStoreBoard.load({params: {vsType: vsType, eventStatus: eventStatus, searchFromDt: me.down("#searchFromDt").getRawValue(), searchToDt: me.down("#searchFromDt").getRawValue(), csctId: me.down("#csctId").getValue()}});
+                    }
+                }
+            });
+            
+            var listPanel = Ext.create('Ext.grid.Panel', {
+                title: 'Event Status List',
+                region: 'south',
+                activeItem: 0,
+                split: true,
+                autoScroll: true,
+                store: listStoreBoard,
+                collapsible: true,
+                columns: [
+                    {text: 'RESULT', dataIndex: 'eventStatusCode', renderer: me.statusCdChange },
+                    {text: 'START_DT', dataIndex: 'eventStartDt', width: 140 },
+                    {text: 'LAST_DT', dataIndex: 'eventLastDt', width: 140 },
+                    {text: 'SOURCEID', dataIndex: 'eventSourceId', width: 60 },
+                    {text: 'VSTYPE', dataIndex: 'eventVsTypeStr', width: 60 },
+                    {text: 'EVENT_TYPE', dataIndex: 'eventTypeStr', width: 130, renderer: me.typeChange },
+                    {text: 'DATA_SIZE', dataIndex: 'eventDataSize', width: 70 },
+                    {text: 'INTERVAL', dataIndex: 'intervalDt', width: 80, renderer: me.intervalChange },
+                    {text: 'EVENT_STATUS', dataIndex: 'eventStatusStr', renderer: me.statusChange },
+                    {text: 'EVENT_MSG', dataIndex: 'eventMsg', width: 230 },
+                    {text: 'EVENT_ROUTE', dataIndex: 'eventRoute' },
+                    {text: 'EVENT_HOST_IP', dataIndex: 'eventHostIp' },
+                    {text: 'EVENT_HOST_NAME', dataIndex: 'eventHostName', width: 140 },
+                    {text: 'EVENT_IP', dataIndex: 'eventIp' },
+                    {text: 'EVENT_ID', dataIndex: 'eventId' }
+                ],
+                height: '40%',
+                width: '100%',
+                listeners: {
+                    itemdblclick: function(view, record, item, index, e, eOpts) {
+                        Ext.Msg.alert('EVENT_MSG', '<pre>'+record.get('eventMsg')+'</pre>');
+                    }
+                }
+            });
+
+            Ext.apply(me, {
+                layout: 'border',
+                items: [
+                    sumPanel,
+                    countPanel,
+                    listPanel
+                ],
+                tbar: [
+                    {
+                        xtype: 'datefield',
+                        itemId: 'searchFromDt',
+                        width: 95,
+                        format: 'Y-m-d',
+                        value: new Date()
+                    },
+                    Ext.create('Ext.Button',{
+                        text: 'Refresh',
+                        id: 'boardRefreshAction',
+                        listeners: {
+                            click: function() {
+                                me.searchAll(true, true);
+                            }
+                        },
+                        iconCls: 'refreshButton'
+                    }),
+                    /*
+                    Ext.create('Ext.Action',{
+                        text: 'Auto Refresh',
+                        enableToggle: true,
+                        toggleHandler: me.onItemToggle,
+                        pressed: false,
+                        iconCls: 'processButton'
+                    }),{
+                        xtype: 'label',
+                        text: '반복(초) :',
+                        margin: '0 0 0 8'
+                    },{
+                        xtype: 'numberfield',
+                        name: 'basic',
+                        value: 10,
+                        minValue: 1,
+                        maxValue: 9999,
+                        step: 1,
+                        width: 50,
+                        keyNavEnabled: true,
+                        listeners: {
+                            change: function(field, value) {
+                                value = parseInt(value, 10);
+                                field.setValue(value);
+                                boardRefreshTask.interval = value * 1000;
+                                if (boardIntervalPressed) {
+                                    me.onItemToggle(null, false);
+                                    me.onItemToggle(null, true);
+                                }
+                            }
+                        }
+                    }
+                    */
+                    {
+                        xtype: 'label',
+                        itemId: 'labelConfig',
+                        text: '',
+                        margin: '0 0 0 8',
+                        listeners: {
+                            afterrender: function(component, eOpts) {
+                                Ext.Ajax.request({
+                                    url: '/wfm-intgl/intgl/event/getConfigContext.json',
+                                    method: 'GET',
+                                    success: function(response, opts) {
+                                        var result = response.responseText.split("/");
+                                        component.setText("Pending Scenario : [" + result[0] + "], Drools Preload : [" + result[1] + "]");
+                                    },
+                                    failure: function(response, opts) {
+                                    }
+                                });
+                            }
+                        }
+                    }
+                ]
+            });
+            me.callParent(arguments);
+        },
+
+        helpRenderer: function(value, metadata) {
+            if(value == 0) return value;
+            metadata.tdAttr = 'data-qtip="클릭하시면 상세 리스트를 조회하실 수 있습니다."';
+            return value;
+        },
+        helpTagRenderer: function(value, metadata) {
+            value = value.toString();
+            if(value == '0') return value;
+            if(value.indexOf('(red)') == 0)
+                value = '<span style="color:red;">' + value.replace('(red)','') + '</span>';
+            metadata.tdAttr = 'data-qtip="클릭하시면 상세 리스트를 조회하실 수 있습니다."';
+            return value;
+        },
+
+        searchAll: function(issum, iscount) {
+            if (issum)
+                sumStoreBoard.load({params: {searchFromDt: this.down("#searchFromDt").getRawValue(), searchToDt: this.down("#searchFromDt").getRawValue()}});
+            if (iscount)
+                countStoreBoard.load({params: {searchFromDt: this.down("#searchFromDt").getRawValue(), searchToDt: this.down("#searchFromDt").getRawValue(), csctId: this.down("#csctId").getValue()}});
+        },
+
+        onItemToggle: function(item, pressed){
+            if (item != null)
+                boardIntervalPressed = pressed;
+            try {
+                if (pressed) {
+                    Ext.TaskManager.start(boardRefreshTask);
+                } else {
+                    Ext.TaskManager.stop(boardRefreshTask);
+                }
+            } catch(e) {}
+        },
+
+        statusCdChange: function(val) {
+            if (val == 'S') {
+                return '<span style="color:blue;">▣ (Success)</span>';
+            } else if (val == 'F') {
+                return '<span style="color:red;">▩ (Fail)</span>';
+            } else if (val == 'I') {
+                return '<span style="color:orange;">▷ (Processing)</span>';
+            } else {
+                return '<span style="color:gray;">◇ (Etc)</span>';
+            }
+            return val;
+        },
+        
+        typeChange: function(val) {
+            switch (val) {
+                case '1':
+                    return '[1] receive';
+                case '2':
+                    return '[2] enqueue';
+                case '3':
+                    return '[3] dequeue';
+                case '4':
+                    return '[4] start mapping';
+                case '5':
+                    return '[5] end mapping';
+                case '6':
+                    return '[6] send(complete)';
+                case '7':
+                    return '[7] response(complete)';
+                default:
+                    return val;
+            }
+        },
+        
+        statusChange: function(val) {
+            switch (val) {
+                case '0':
+                    return '[0] 정상';
+                case '1':
+                    return '[1] 타입체크오류';
+                case '2':
+                    return '[2] JMS오류';
+                case '3':
+                    return '[3] 데이터변환오류';
+                case '4':
+                    return '[4] 타켓전송오류';
+                case '5':
+                    return '[5] 타켓처리오류';
+                case '6':
+                    return '[6] 재처리실패';
+                case '7':
+                    return '[7] 재처리성공';
+                case '99':
+                    return '[99] 기타오류';
+                default:
+                    return val;
+            }
+        },
+        
+        intervalChange: function(val) {
+            var ms = val.split(".");
+            var vals = ms[ms.length - 2].split(":");
+            return vals[vals.length - 2] + ":" + vals[vals.length - 1] + "." + ms[ms.length - 1].substring(0,3);
+        }
+    });
+    
+    Ext.getCmp("app-main").getActiveTab().add(Ext.create('widget.eventboard'));
+
+    Ext.getCmp("boardRefreshAction").fireEvent('click');
+
+    Ext.getCmp("app-main").on('tabchange', function(panel, newTab, oldTab) {
+        console.log(newTab.title + " tabchange");
+
+        if(newTab.title && newTab.title == "실시간 현황판") {
+            if(boardIntervalPressed) {
+                Ext.TaskManager.start(boardRefreshTask);
+            }
+        }else{
+            Ext.TaskManager.stop(boardRefreshTask);
+        }
+    });
+ 
+</script>

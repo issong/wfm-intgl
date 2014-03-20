@@ -1,0 +1,140 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com._360scheduling.schema.dsmodelling.DsModelling.RAMUpdate;
+
+// vstype == 14 이면
+// id : 9자리 숫자 UUID 생성
+// Dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS14_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end
+
+// vstype == 14A 이면
+// id : 9자리 숫자 UUID 생성
+// dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS14A_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14A)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end
+
+// vstype == 14B 이면
+// id : 9자리 숫자 UUID 생성
+// dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS14B_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14B)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end
+
+// vstype == 14C 이면
+// id : 9자리 숫자 UUID 생성
+// dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS14C_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14C)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end
+
+// vstype == 14D 이면
+// id : 9자리 숫자 UUID 생성
+// Dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS14D_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14D)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end
+
+// vstype == 16 이면
+// id : 9자리 숫자 UUID 생성
+// Dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS16_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS16)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end
+
+// vstype == 16A 이면
+// id : 9자리 숫자 UUID 생성
+// dataset_id : [sourceId] 매핑
+// organisation_id : Default 값으로 1 설정
+// ram_update_type_id : Default 값으로 'CHANGE' 설정
+rule "VS16A_RAMUpdate"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS16A)
+		ramUpdate : RAMUpdate()
+	then
+		ramUpdate.setId(StringUtil.toLongString(9));
+		ramUpdate.setDatasetId(intglVo.getSourceId());
+		ramUpdate.setOrganisationId("1");
+		ramUpdate.setRamUpdateTypeId("CHANGE");
+        update(ramUpdate);
+end

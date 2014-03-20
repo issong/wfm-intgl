@@ -1,0 +1,56 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMResourceInfo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMDeleteResourceInfo;
+import com._360scheduling.schema.dssystemdata.DsSystemData.SystemDataUpdate;
+
+// vstype == 15A 이면..
+// object_type_id : Default 값으로 'Users' 설정
+// object_pk_name1 : Default 값으로 'id' 설정
+// object_pk1 : [workerId] 매핑
+// object_pk_name2 : Default 값으로 'organisation_id' 설정
+// object_pk2 : Default 값으로 1 설정
+// delete_row : Default 값으로 true 설정
+rule "VS15A_SystemDataUpdate"
+	dialect "java"
+	no-loop
+	when
+		order : WMDeleteResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS15A)
+		systemDataUpdate : SystemDataUpdate()
+	then
+		systemDataUpdate.setObjectTypeId("Users");
+		systemDataUpdate.setObjectPkName1("id");
+		systemDataUpdate.setObjectPk1(order.getWorkerId());
+		systemDataUpdate.setObjectPkName2("organisation_id");
+		systemDataUpdate.setObjectPk2("1");
+		systemDataUpdate.setDeleteRow(true);
+        update(systemDataUpdate);
+end
+
+// vstype == 15D 이면..
+// object_type_id : Default 값으로 'Users' 설정
+// object_pk_name1 : Default 값으로 'id' 설정
+// object_pk1 : [workerId] 매핑
+// object_pk_name2 : Default 값으로 'organisation_id' 설정
+// object_pk2 : Default 값으로 1 설정
+// delete_row : Default 값으로 true 설정
+rule "VS15D_SystemDataUpdate"
+	dialect "java"
+	no-loop
+	when
+		order : WMResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS15D)
+		systemDataUpdate : SystemDataUpdate()
+	then
+		systemDataUpdate.setObjectTypeId("Users");
+		systemDataUpdate.setObjectPkName1("id");
+		systemDataUpdate.setObjectPk1(order.getWorkerId());
+		systemDataUpdate.setObjectPkName2("organisation_id");
+		systemDataUpdate.setObjectPk2("1");
+		systemDataUpdate.setDeleteRow(true);
+        update(systemDataUpdate);
+end

@@ -1,0 +1,17 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import java.util.ArrayList;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.Rules._Rules;
+
+rule "intgl_rule_vs6b"
+	dialect "java"
+	no-loop
+	when
+		drlList : ArrayList()
+	then
+		drlList.add(_Rules.AppointmentOfferResponse);
+		drlList.add(_Rules.ObjectDeletion);
+		drlList.add(_Rules.InputReference);
+        update(drlList);
+end

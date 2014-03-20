@@ -1,0 +1,126 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.WMResourceInfo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMDeleteResourceInfo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMDivisionInfo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMConfirmResourceInfo;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsmodelling.DsModelling.RAMDataUpdate;
+
+// vstype == 14 이면
+// 360 mirror DB 에서 아래 SQL을 실행하여서 해당작업자의 ram_division_id가 존재하면 해당 ram_division_id 수만큼 해당 Set 생성
+// object_Type_id : Default 값으로 'RAM_Resource_Division' 설정
+// object_pk1 : [workerId] 매핑
+// object_pk_name1 : Default 값으로 'ram_resource_id' 설정
+// object_pk2 : 쿼리 결과의 [ram_division_id] 매핑
+// object_pk_name2 : Default 값으로 'ram_division_id' 설정
+// delete_row : Default 값으로 'true' 설정
+rule "VS14_RAMDataUpdate"
+	dialect "java"
+	no-loop
+	when
+		order : WMResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14)
+		rulesVo : RulesVo()
+		ramDataUpdate : RAMDataUpdate()
+	then
+		ramDataUpdate.setObjectTypeId("RAM_Resource_Division");
+		ramDataUpdate.setObjectPk1(order.getWorkerId());
+		ramDataUpdate.setObjectPkName1("ram_resource_id");
+		ramDataUpdate.setObjectPk2(rulesVo.getRamDivisionId());
+		ramDataUpdate.setObjectPkName2("ram_division_id");
+		ramDataUpdate.setDeleteRow(true);
+        update(ramDataUpdate);
+end
+
+// vstype == 14A 이고 officeScodes == null 이면
+// object_Type_id : Default 값으로 'RAM_Resource' 설정
+// object_pk1 : [workerId] 매핑
+// object_pk_name1 : Default 값으로 'id' 설정
+// delete_row : Default 값으로 'true' 설정
+rule "VS14A_RAMDataUpdate1"
+	dialect "java"
+	no-loop
+	when
+		order : WMDeleteResourceInfo(officeScodes == null)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14A)
+		ramDataUpdate : RAMDataUpdate()
+	then
+		ramDataUpdate.setObjectTypeId("RAM_Resource");
+		ramDataUpdate.setObjectPk1(order.getWorkerId());
+		ramDataUpdate.setObjectPkName1("id");
+		ramDataUpdate.setDeleteRow(true);
+        update(ramDataUpdate);
+end
+
+// vstype == 14A 이고 officeScodes != null 이면
+// object_Type_id : Default 값으로 'RAM_Resource_Division' 설정
+// object_pk1 : [workerId] 매핑
+// object_pk_name1 : Default 값으로 'ram_resource_id' 설정
+// object_pk2 : [officeScode] 매핑
+// object_pk_name2 : Default 값으로 'ram_division_id' 설정
+// delete_row : Default 값으로 'true' 설정
+rule "VS14A_RAMDataUpdate2"
+	dialect "java"
+	no-loop
+	when
+		order : WMDeleteResourceInfo(officeScodes != null)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14A)
+		ramDataUpdate : RAMDataUpdate()
+	then
+		ramDataUpdate.setObjectTypeId("RAM_Resource_Division");
+		ramDataUpdate.setObjectPk1(order.getWorkerId());
+		ramDataUpdate.setObjectPkName1("ram_resource_id");
+		ramDataUpdate.setObjectPk2(order.getOfficeScodes());
+		ramDataUpdate.setObjectPkName2("ram_division_id");
+		ramDataUpdate.setDeleteRow(true);
+        update(ramDataUpdate);
+end
+
+// vstype == 14B 이면
+// object_Type_id : Default 값으로 'RAM_Resource' 설정
+// object_pk1 : [workerId] 매핑
+// object_pk_name1 : Default 값으로 'id' 설정
+// column_name : Default 값으로 'ram_rule_collection_id' 설정
+// column_value : case companyTypeCode = '9' then "KT_" + [dispatchCount] 매핑 else "Agency_" + [dispatchCount] 매핑
+// delete_row : Default 값으로 'False' 설정
+rule "VS14B_RAMDataUpdate"
+	dialect "java"
+	no-loop
+	when
+		order : WMConfirmResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14B)
+		ramDataUpdate : RAMDataUpdate()
+	then
+		ramDataUpdate.setObjectTypeId("RAM_Resource");
+		ramDataUpdate.setObjectPk1(order.getWorkerId());
+		ramDataUpdate.setObjectPkName1("id");
+		ramDataUpdate.setColumnName("ram_rule_collection_id");
+		ramDataUpdate.setColumnValue(("9".equals(order.getCompanyTypeCode()))? "KT_" + order.getDispatchCount() : "Agency_" + order.getDispatchCount());
+		ramDataUpdate.setDeleteRow(false);
+        update(ramDataUpdate);
+end
+
+// vstype == 16A 이면
+// object_type_id : Default 값으로 'RAM_Division' 설정
+// object_pk1 : [officeScode] +'_' + [workTeamCode] 매핑
+// object_pk_name1 : Default 값으로 'id' 설정
+// delete_row : Default 값으로 'true' 설정
+rule "VS16A_RAMDataUpdate"
+	dialect "java"
+	no-loop
+	when
+		order : WMDivisionInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS16A)
+		ramDataUpdate : RAMDataUpdate()
+	then
+		ramDataUpdate.setObjectTypeId("RAM_Division");
+		ramDataUpdate.setObjectPk1(order.getOfficeScode() + "_" + order.getWorkTeamCode());
+		ramDataUpdate.setObjectPkName1("id");
+		ramDataUpdate.setDeleteRow(true);
+        update(ramDataUpdate);
+end

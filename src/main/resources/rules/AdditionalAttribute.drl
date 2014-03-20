@@ -1,0 +1,245 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.AdditionalAttribute;
+
+// vstype == 1 이고 int == 0 이면
+// bt360SlaStartDt의 값이 정상적(날짜형식)으로 존재시에만 해당 Schema생성
+// id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'open_date' 설정
+// label_value : Substr([bt360SlaStartDt] 1, 10) ->(YYYY-MM-DD) 형식으로 변환 후
+//               case (YYYY-MM-DD) = 오늘 then '0' 설정
+//               case (YYYY-MM-DD) = 내일 then '1' 설정
+//               else '' 설정
+// data_type : Default 값으로 'STRING' 설정
+rule "VS1_AdditionalAttribute1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("open_date");
+		additionalAttribute.setLabelValue((StringUtil.toDate("yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "0" : ((StringUtil.toDate(1, "yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "1" : ""));
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 1 이고 int == 1 이면
+// concurrentSeq의 값이 존재할 경우에만 해당 Schema생성
+// id : [worktype] + [officeScode] + [workOdrNum ] + '_1' 매핑
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'concurrent_num' 설정
+// label_value : [officeScode] + "-" + [concurrentSeq] 매핑
+// data_type : Default 값으로 'STRING' 설정
+rule "VS1_AdditionalAttribute2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum() + "_1");
+		additionalAttribute.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("concurrent_num");
+		additionalAttribute.setLabelValue(order.getOfficeScode() + "-" + order.getConcurrentSeq());
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 5 이고 int == 0 이면
+// bt360SlaStartDt의 값이 정상적(날짜형식)으로 존재시에만 해당 Schema생성
+// id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'open_date' 설정
+// label_value : Substr([bt360SlaStartDt] 1, 10) ->(YYYY-MM-DD) 형식으로 변환 후
+//               case (YYYY-MM-DD) = 오늘 then '0' 설정
+//               case (YYYY-MM-DD) = 내일 then '1' 설정
+//               else '' 설정
+// data_type : Default 값으로 'STRING' 설정
+rule "VS5_AdditionalAttribute1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("open_date");
+		additionalAttribute.setLabelValue((StringUtil.toDate("yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "0" : ((StringUtil.toDate(1, "yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "1" : ""));
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 5 이고 int == 1 이면
+// concurrentSeq의 값이 존재할 경우에만 해당 Schema생성
+// id : [worktype] + [officeScode] + [workOdrNum ] + '_1' 매핑
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'concurrent_num' 설정
+// label_value : [officeScode] + "-" + [concurrentSeq] 매핑
+// data_type : Default 값으로 'STRING' 설정
+rule "VS5_AdditionalAttribute2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum() + "_1");
+		additionalAttribute.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("concurrent_num");
+		additionalAttribute.setLabelValue(order.getOfficeScode() + "-" + order.getConcurrentSeq());
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 6C 이고 int == 0 이면
+// bt360SlaStartDt의 값이 정상적(날짜형식)으로 존재시에만 해당 Schema생성
+// id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//        [worktype] + [officeScode] + [odrNum] 매핑
+//      else
+//        [odrNum] 매핑
+//      end if
+// activity_id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//                 [worktype] + [officeScode] + [odrNum] 매핑
+//               else
+//                 [odrNum] 매핑
+//               end if
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'open_date' 설정
+// label_value : Substr([bt360SlaStartDt] 1, 10) ->(YYYY-MM-DD) 형식으로 변환 후
+//               case (YYYY-MM-DD) = 오늘 then '0' 설정
+//               case (YYYY-MM-DD) = 내일 then '1' 설정
+//               else '' 설정
+// data_type : Default 값으로 'STRING' 설정
+rule "VS6C_AdditionalAttribute1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() : order.getOdrNum());
+		additionalAttribute.setActivityId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() : order.getOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("open_date");
+		additionalAttribute.setLabelValue((StringUtil.toDate("yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "0" : ((StringUtil.toDate(1, "yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "1" : ""));
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 6C 이고 int == 1 이면
+// concurrentSeq의 값이 존재할 경우에만 해당 Schema생성
+// id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//        [worktype] + [officeScode] + [odrNum] 매핑
+//      else
+//        [odrNum] 매핑
+//      end if
+// activity_id : if left( [appointmentRequestId] , 2)  == 'WM' then
+//                 [worktype] + [officeScode] + [odrNum] 매핑
+//               else
+//                 [odrNum] 매핑
+//               end if
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'concurrent_num' 설정
+// label_value : [officeScode] + "-" + [concurrentSeq] 매핑
+// data_type : Default 값으로 'STRING' 설정
+rule "VS6C_AdditionalAttribute2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() + "_1" : order.getOdrNum() + "_1");
+		additionalAttribute.setActivityId(("WM".equals(intglVo.getAppointmentRequestId().substring(0,2)))? order.getWorkType() + order.getOfficeScode() + order.getOdrNum() : order.getOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("concurrent_num");
+		additionalAttribute.setLabelValue(order.getOfficeScode() + "-" + order.getConcurrentSeq());
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 10 이고 int == 0 이면
+// bt360SlaStartDt의 값이 정상적(날짜형식)으로 존재시에만 해당 Schema생성
+// id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'open_date' 설정
+// label_value : Substr([bt360SlaStartDt] 1, 10) ->(YYYY-MM-DD) 형식으로 변환 후
+//               case (YYYY-MM-DD) = 오늘 then '0' 설정
+//               case (YYYY-MM-DD) = 내일 then '1' 설정
+//               else '' 설정
+// data_type : Default 값으로 'STRING' 설정
+rule "VS10_AdditionalAttribute1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("open_date");
+		additionalAttribute.setLabelValue((StringUtil.toDate("yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "0" : ((StringUtil.toDate(1, "yyyy-MM-dd").equals(order.getBt360SlaStartDt().toString().substring(0, 10)))? "1" : ""));
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end
+
+// vstype == 10 이고 int == 1 이면
+// concurrentSeq의 값이 존재할 경우에만 해당 Schema생성
+// id : [worktype] + [officeScode] + [workOdrNum ] + '_1' 매핑
+// activity_id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// sequence : Default 값으로 1 설정
+// label : Default 값으로 'concurrent_num' 설정
+// label_value : [officeScode] + "-" + [concurrentSeq] 매핑
+// data_type : Default 값으로 'STRING' 설정
+rule "VS10_AdditionalAttribute2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		additionalAttribute : AdditionalAttribute()
+	then
+		additionalAttribute.setId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum() + "_1");
+		additionalAttribute.setActivityId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		additionalAttribute.setSequence(1);
+		additionalAttribute.setLabel("concurrent_num");
+		additionalAttribute.setLabelValue(order.getOfficeScode() + "-" + order.getConcurrentSeq());
+		additionalAttribute.setDataType("STRING");
+        update(additionalAttribute);
+end

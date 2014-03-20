@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+       						http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+       						http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-3.1.xsd">
+
+
+	<!-- =================================================== -->
+	<!-- 		JMS Connection Factory   					 -->
+	<!-- =================================================== -->
+	
+		<!-- use ActiveMQQueue -->
+ 		<bean id="connectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+ 			<property name="connectionFactory">
+ 				<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+					<property name="brokerURL" value="tcp://122.199.145.170:61616"/>
+				</bean>
+ 			</property>
+ 		</bean>
+
+		<!-- use JNDI HornetQ 
+	    <bean id="jndiTemplate" class="org.springframework.jndi.JndiTemplate">
+	    	<property name="environment">
+	    		<bean class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+	    			<property name="properties">
+	    				<value>
+	    					java.naming.factory.initial=org.jnp.interfaces.NamingContextFactory
+	    					java.naming.provider.url=jnp://localhost:1099
+	    				</value>
+	    			</property>
+	    		</bean>
+	    	</property>
+	    </bean>		
+		
+	    <bean id="connectionFactory" class="org.springframework.jndi.JndiObjectFactoryBean">
+	        <property name="jndiName" value="ConnectionFactory" />
+	        <property name="jndiTemplate" ref="jndiTemplate"/>
+	    </bean>
+	    -->
+	<!-- =================================================== -->
+	<!-- 		Destination Define(Queue/Topic)		         -->
+	<!-- =================================================== -->
+
+ 		<!-- use ActiveMQQueue -->	
+		<bean id="legacyDestination" class="org.apache.activemq.command.ActiveMQQueue">
+			<constructor-arg value="legacy.queue"/>
+		</bean>
+		     
+
+		<!-- use JBoss HornetQ 
+	    <bean id="legacyDestination" class="org.springframework.jndi.JndiObjectFactoryBean">
+	        <property name="jndiName" value="/queue/legacyQueue" />
+	        <property name="jndiTemplate" ref="jndiTemplate"/>
+	    </bean>
+	    -->
+	<!-- =================================================== -->
+	<!-- 		Client JMS Template							 -->
+	<!-- =================================================== -->
+		
+		<bean id="legacyJmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+			<property name="connectionFactory" ref="connectionFactory"/>
+			<property name="defaultDestination" ref="legacyDestination"/>
+			<property name="receiveTimeout" value="10000"/>
+		</bean>		
+
+	<!-- =================================================== -->
+	<!-- 		JMS Client              					 -->
+	<!-- =================================================== -->
+				
+		<bean id="legacyDataJMSClient" class="com.kt.oss.wmIntgl.datahandler.jms.impl.LegacyDataJMSClientImpl">
+			<property name="jmsTemplate" ref="legacyJmsTemplate"/>
+		</bean>
+
+	<!-- =================================================== -->
+	<!-- 		JMS Listener & Adapter   					 -->
+	<!-- =================================================== -->
+	
+		<bean id="legacyDataJMSListener" class="com.kt.oss.wmIntgl.datahandler.jms.listener.LegacyDataJMSListener" />
+
+		<bean id="legacyDataConverter" class="com.kt.oss.wmIntgl.datahandler.jms.message.LegacyDataConverter" />
+
+
+		<bean id="legacyDataListenerAdapter" class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+			<property name="delegate" ref="legacyDataJMSListener" />
+			<property name="defaultListenerMethod" value="receiveData" />
+			<property name="messageConverter" ref="legacyDataConverter" />
+		</bean>		
+
+		<bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+			<property name="connectionFactory" ref="connectionFactory"/>
+			<property name="destination" ref="legacyDestination"/>
+			<property name="messageListener" ref="legacyDataListenerAdapter"/>
+			<property name="sessionTransacted" value="true"/>
+		</bean>
+
+		<bean id="jmsTransactionManager" class="org.springframework.jms.connection.JmsTransactionManager">
+			<property name="connectionFactory">
+				<ref bean="connectionFactory"/>
+			</property>
+		</bean>		
+					    
+</beans>

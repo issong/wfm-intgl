@@ -1,0 +1,460 @@
+<script type="text/javascript">
+
+    var sTerm = 1;
+    var sEventStatus = '';
+    var sEventSourceId = '';
+    var sVsType = '';
+    
+    //var interval = 10000;
+    var intervalRun;
+    var intervalPressed = false;
+    
+    var listStoreStatus = Ext.create('Ext.data.Store', {
+        storeId: 'listStoreStatus',
+        fields: ['eventStatusCode','eventStartDt','eventLastDt','eventSourceId','eventVsTypeStr','eventTypeStr','eventDataSize','intervalDt','eventStatusStr','eventMsg','eventRoute','eventHostIp','eventHostName','eventIp','eventId','reserveStatus'],
+        pageSize: 30
+        //proxy: getProxy(sTerm),
+        /*
+        proxy: {
+            pageSize: 30,
+        	type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getEventStatusList.json',
+            reader: {
+                type: 'json',
+                root: 'items',
+                totalProperty: 'totalPage'
+            }
+        }*/
+    });
+/*
+    function getProxy(sTerm) {
+        return new Ext.data.proxy.Ajax({
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getEventStatusList.json?term=' + sTerm,
+            reader: {
+                type: 'json',
+                root: 'items'
+            }
+        });
+    };
+*/
+	var searchListStatus = function(page) {
+		var proxy = new Ext.data.proxy.Ajax({
+            pageSize: 30,
+        	type: 'pagingmemory',
+            url: '/wfm-intgl/intgl/event/getEventStatusList.json?term=' + sTerm + '&eventStatus=' + sEventStatus + '&eventSourceId=' + sEventSourceId + '&vsType=' + sVsType,
+            reader: {
+                type: 'json',
+                root: 'items',
+                totalProperty: 'totalPage'
+            }
+        });
+        listStoreStatus.removeAll(false);
+        listStoreStatus.setProxy(proxy);
+        listStoreStatus.loadPage(page);
+	};
+	
+    var refreshTask = {
+        run: function(){
+            console.log("refreshTask run");
+            Ext.StoreMgr.get('listStoreStatus').reload();
+        },
+        interval: 10000
+    };    
+
+    Ext.define('Intgl.app.EventStatus', {
+        extend: 'Ext.panel.Panel',
+        alias: 'widget.eventstatus',
+
+        initComponent: function() {
+            var me = this;
+            
+            var msgStore = Ext.create('Ext.data.Store', {
+                //storeId: 'msgStore',
+                fields: ['eventDetailMsg']
+            });
+
+            var listPanel = Ext.create('Ext.grid.Panel', {
+                //id : 'list-panel',
+                title: 'Event Status List',
+                region: 'center',
+                activeItem: 0,
+                split: true,
+                autoScroll: true,
+                store: listStoreStatus,
+                columns: [
+                    {text: 'RESULT', dataIndex: 'eventStatusCode', renderer: me.statusCdChange },
+                    {text: 'START_DT', dataIndex: 'eventStartDt', width: 140 },
+                    {text: 'LAST_DT', dataIndex: 'eventLastDt', width: 140 },
+                    {text: 'SOURCEID', dataIndex: 'eventSourceId', width: 60 },
+                    {text: 'VSTYPE', dataIndex: 'eventVsTypeStr', width: 60 },
+                    {text: 'EVENT_TYPE', dataIndex: 'eventTypeStr', width: 130, renderer: me.typeChange },
+                    {text: 'DATA_SIZE', dataIndex: 'eventDataSize', width: 70 },
+                    {text: 'INTERVAL', dataIndex: 'intervalDt', width: 80, renderer: me.intervalChange },
+                    {text: 'EVENT_STATUS', dataIndex: 'eventStatusStr', renderer: me.statusChange },
+                    {text: 'EVENT_MSG', dataIndex: 'eventMsg', width: 230 },
+                    {text: 'EVENT_ROUTE', dataIndex: 'eventRoute' },
+                    {text: 'EVENT_HOST_IP', dataIndex: 'eventHostIp' },
+                    {text: 'EVENT_HOST_NAME', dataIndex: 'eventHostName', width: 140 },
+                    {text: 'EVENT_IP', dataIndex: 'eventIp' },
+                    {text: 'EVENT_ID', dataIndex: 'eventId' },
+                    {text: 'RESERVE_STATUS', dataIndex: 'reserveStatus' }
+                ],
+                height: '100%',
+                width: '100%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        Ext.create('Ext.Action',{
+                            text: 'Refresh',
+                            handler: function() {
+                                //listStoreStatus.reload({params: {term: sTerm, eventStatus: listPanel.down("#eventStatus").getValue(), eventSourceId: listPanel.down("#eventSourceId").getValue(), vsType: listPanel.down("#vsType").getValue()}});
+                                sEventStatus = listPanel.down("#eventStatus").getValue();
+                                sEventSourceId = listPanel.down("#eventSourceId").getValue(); 
+                                sVsType = listPanel.down("#vsType").getValue();
+                                searchListStatus(1);
+                            },
+                            iconCls: 'refreshButton'
+                        }),
+                        /*
+                        Ext.create('Ext.Action',{
+                            text: 'Auto Refresh',
+                            enableToggle: true,
+                            toggleHandler: me.onItemToggle,
+                            pressed: false,
+                            iconCls: 'processButton'
+                        }),{
+                            xtype: 'label',
+                            text: '반복(초) :',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'numberfield',
+                            name: 'basic',
+                            value: 10,
+                            minValue: 5,
+                            maxValue: 90,
+                            step: 5,
+                            width: 40,
+                            keyNavEnabled: true,
+                            listeners: {
+                                change: function(field, value) {
+                                    value = parseInt(value, 10);
+                                    if (value > 90)
+                                        value = 90;
+                                    if (value < 5)
+                                        value = 5;
+                                    field.setValue(value);
+                                    //interval = value * 1000;
+                                    refreshTask.interval = value * 1000;
+                                    if (intervalPressed) {
+                                        me.onItemToggle(null, false);
+                                        me.onItemToggle(null, true);
+                                    }
+                                }
+                            }
+                        },
+                        */
+                        {
+                            xtype: 'label',
+                            text: '조회(분전) :',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'numberfield',
+                            name: 'basic',
+                            value: 1,
+                            minValue: 1,
+                            maxValue: 60,
+                            step: 1,
+                            width: 45,
+                            keyNavEnabled: true,
+                            listeners: {
+                                change: function(field, value) {
+                                    value = parseInt(value, 10);
+                                    if (value > 60)
+                                        value = 60;
+                                    if (value < 1)
+                                        value = 1;
+                                    field.setValue(value);
+                                    sTerm = value;
+                                    //listStoreStatus.setProxy(me.getProxy(sTerm));
+                                    //listStoreStatus.load({params: {term: sTerm}});
+                                }
+                            }
+                        },{
+                            xtype: 'label',
+                            text: 'CSCT_ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventSourceId',
+                            width: 60
+                        },{
+                            xtype: 'label',
+                            text: 'VS시나리오 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'combo',
+                            itemId: 'vsType',
+                            editable: false,
+                            forceSelection: true,
+                            width: 70,
+                            matchFieldWidth: false,
+                            queryMode: 'local',
+                            displayField: 'name',
+                            valueField: 'abbr',
+                            store: {
+                                fields: ['abbr', 'name'],
+                                data: [
+                                    {'abbr':'A',     'name':'전체'},
+                                    {'abbr':'VS1',   'name':'[VS1] Initial Load(Start of Day)'},
+                                    {'abbr':'VS2',   'name':'[VS2] Assignments returned to NeOSS'},
+                                    {'abbr':'VS3',   'name':'[VS3] Task Status Updates'},
+                                    {'abbr':'VS3A',  'name':'[VS3A] Task Status Updates'},
+                                    {'abbr':'VS4',   'name':'[VS4] Task Status Updates'},
+                                    {'abbr':'VS5',   'name':'[VS5] Arrival of New Work for Execution on Current Day'},
+                                    {'abbr':'VS6',   'name':'[VS6] VS6_Making an appointment'},
+                                    {'abbr':'VS6A',  'name':'[VS6A] Making an appointment (Offers returned)'},
+                                    {'abbr':'VS6B',  'name':'[VS6B] Making an appointment (Offers Rejected)'},
+                                    {'abbr':'VS6C',  'name':'[VS6C] Making an appointment (Offers accepted)'},
+                                    {'abbr':'VS6D',  'name':'[VS6D] Work Cancelled by ICIS/NEOSSWM'},
+                                    {'abbr':'VS7',   'name':'[VS7] Manual allocation using  iSWB'},
+                                    {'abbr':'VS7A',  'name':'[VS7A] Manual allocation using NeOSS WM'},
+                                    {'abbr':'VS7B',  'name':'[VS7B] Manual allocation using NeOSS WM'},
+                                    {'abbr':'VS7C',  'name':'[VS7C] Manual allocation using NeOSS WM'},
+                                    {'abbr':'VS8',   'name':'[VS8] Work Cancelled by NeOSS WM'},
+                                    {'abbr':'VS10',  'name':'[VS10] Work Modification by NeOSS WM'},
+                                    {'abbr':'VS12',  'name':'[VS12] 360 Heartbeat from NeOSS WM'},
+                                    {'abbr':'VS14',  'name':'[VS14] Resource Changed by NeOSS WM'},
+                                    {'abbr':'VS14A', 'name':'[VS14A] Reource Deleted by NeOSS WM'},
+                                    {'abbr':'VS14B', 'name':'[VS14B] Reource Confirm by NeOSS WM'},
+                                    {'abbr':'VS14C', 'name':'[VS14C] Worker service info from NeOSS'},
+                                    {'abbr':'VS14D', 'name':'[VS14D] Worker info add from NeOSS'},
+                                    {'abbr':'VS15A', 'name':'[VS15A] remove User Info'},
+                                    {'abbr':'VS15D', 'name':'[VS15D] add, change User Info'},
+                                    {'abbr':'VS16',  'name':'[VS16] add ARP data'},
+                                    {'abbr':'VS16A', 'name':'[VS16A] remove ARP data'},
+                                    {'abbr':'VS20',  'name':'[VS20] Task Status Updates'},
+                                    {'abbr':'VS90',  'name':'[VS90] Raise Custom Excpetion by NeOSS WM'},
+                                    {'abbr':'VS91',  'name':'[VS91] Remove Custom Exception by NeOSS WM'}
+                                ]
+                            },
+                            listeners: {
+                                afterrender: function(component, eOpts) {
+                                    component.setValue('A');
+                                }
+                            }
+                        },{
+                            xtype: 'label',
+                            text: '이벤트상태 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'combo',
+                            itemId: 'eventStatus',
+                            editable: false,
+                            forceSelection: true,
+                            width: 70,
+                            queryMode: 'local',
+                            displayField: 'name',
+                            valueField: 'abbr',
+                            store: {
+                                fields: ['abbr', 'name'],
+                                data: [
+                                    {'abbr':'A', 'name':'전체'},
+                                    {'abbr':'S', 'name':'성공'},
+                                    {'abbr':'F', 'name':'실패'}
+                                ]
+                            },
+                            listeners: {
+                                afterrender: function(component, eOpts) {
+                                    component.setValue('A');
+                                }
+                            }
+                        }
+                    ]
+                },
+                bbar: Ext.create('Ext.PagingToolbar', {
+                    pageSize: 30,
+                    store: listStoreStatus,
+                    displayInfo: true,
+                    plugins: Ext.create('Ext.ux.SlidingPager', {})
+                }),
+                listeners: {
+                    itemdblclick: function(view, record, item, index, e, eOpts) {
+                        Ext.Msg.alert('EVENT_MSG', '<pre>'+record.get('eventMsg')+'</pre>');
+                    }
+                }
+            });
+
+            listPanel.getSelectionModel().on('select', function(selModel, record, index, eOpts) {
+                getEventLogDetail('#content-panel1', index, 1);
+                getEventLogDetail('#content-panel2', index, 6);
+            });
+            
+            var getEventLogDetail = function(target, index, eventType) {
+                var bd = me.down(target).body;
+                bd.update('');
+                
+                var dataModel = listStoreStatus.getAt(index);
+                var proxy = new Ext.data.proxy.Ajax({
+                    type: 'direct',
+                    url: '/wfm-intgl/intgl/event/getEventLogDetail.json?eventId=' + dataModel.get("eventId") + '&eventType=' + eventType,
+                    reader: {
+                        type: 'json',
+                        root: 'items'
+                    }
+                });
+                msgStore.setProxy(proxy);
+                msgStore.load(function(records, operation, success) {
+                    bd.update(msgStore.getAt(0).get("eventDetailMsg"));
+                });
+            };
+
+            var contentPanel1 = {
+                itemId: 'content-panel1',
+                region: 'west', // this is what makes this panel into a region within the containing layout
+                activeItem: 1,
+                split: true,
+                autoScroll: true,
+                border: true,
+                width: '50%',
+                height: '100%',
+                weight: -100,
+                html: ''
+            };
+
+            var contentPanel2 = {
+                itemId: 'content-panel2',
+                region: 'center', // this is what makes this panel into a region within the containing layout
+                activeItem: 1,
+                split: true,
+                autoScroll: true,
+                border: true,
+                width: '50%',
+                height: '100%',
+                weight: -100,
+                html: ''
+            };
+
+            Ext.apply(me, {
+                layout: 'border',
+                items: [
+                    listPanel,
+                    {
+                        layout: 'border',
+                        title: 'Receve & Send Data',
+                        //id: 'layout-content',
+                        region: 'south',
+                        collapsible: true,
+                        border: false,
+                        split: true,
+                        margins: '0 0 0 0',
+                        width: '100%',
+                        height: '30%',
+                        items: [contentPanel1, contentPanel2]
+                    }
+                ],
+            });
+            me.callParent(arguments);
+        },
+
+        statusCdChange: function(val) {
+            if (val == 'S') {
+                return '<span style="color:blue;">▣ (Success)</span>';
+            } else if (val == 'F') {
+                return '<span style="color:red;">▩ (Fail)</span>';
+            } else if (val == 'I') {
+                return '<span style="color:orange;">▷ (Processing)</span>';
+            } else {
+                return '<span style="color:gray;">◇ (Etc)</span>';
+            }
+            return val;
+        },
+        
+        typeChange: function(val) {
+            switch (val) {
+                case '1':
+                    return '[1] receive';
+                case '2':
+                    return '[2] enqueue';
+                case '3':
+                    return '[3] dequeue';
+                case '4':
+                    return '[4] start mapping';
+                case '5':
+                    return '[5] end mapping';
+                case '6':
+                    return '[6] send(complete)';
+                case '7':
+                    return '[7] response(complete)';
+                default:
+                    return val;
+            }
+        },
+        
+        statusChange: function(val) {
+            switch (val) {
+                case '0':
+                    return '[0] 정상';
+                case '1':
+                    return '[1] 타입체크오류';
+                case '2':
+                    return '[2] JMS오류';
+                case '3':
+                    return '[3] 데이터변환오류';
+                case '4':
+                    return '[4] 타켓전송오류';
+                case '5':
+                    return '[5] 타켓처리오류';
+                case '6':
+                    return '[6] 재처리실패';
+                case '7':
+                    return '[7] 재처리성공';
+                case '99':
+                    return '[99] 기타오류';
+                default:
+                    return val;
+            }
+        },
+        
+        intervalChange: function(val) {
+            var ms = val.split(".");
+            var vals = ms[ms.length - 2].split(":");
+            return vals[vals.length - 2] + ":" + vals[vals.length - 1] + "." + ms[ms.length - 1].substring(0,3);
+        },
+
+        onItemToggle: function(item, pressed){
+            if (item != null)
+                intervalPressed = pressed;
+
+            console.log("intervalPressed=" + intervalPressed);
+            console.log("interval=" + refreshTask.interval);
+
+            try {
+                if (pressed) {
+                    Ext.TaskManager.start(refreshTask);
+                    //intervalRun = setInterval(function() {Ext.StoreMgr.get('listStoreStatus').reload();}, interval);
+                } else {
+                    Ext.TaskManager.stop(refreshTask);
+                    //clearInterval(intervalRun);
+                }
+            } catch(e) {}
+        }
+    });
+
+    Ext.getCmp("app-main").getActiveTab().add(Ext.create('widget.eventstatus'));
+
+
+    Ext.getCmp("app-main").on('tabchange', function(panel, newTab, oldTab) {
+        console.log(newTab.title + " tabchange");
+
+        if(newTab.title && newTab.title == "실시간 모니터링") {
+            if(intervalPressed) {
+                Ext.TaskManager.start(refreshTask);
+            }
+        }else{
+            Ext.TaskManager.stop(refreshTask);
+        }
+    });
+
+</script>

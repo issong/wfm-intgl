@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:oxm="http://www.springframework.org/schema/oxm"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+       					   http://www.springframework.org/schema/beans/spring-beans.xsd
+					       http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd
+					       http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+					       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+					       http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm-3.0.xsd
+					       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<!-- Apache CXF Resource -->
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+<!--     <import resource="classpath:META-INF/cxf/cxf-extension-soap.xml" /> -->
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+
+	<jaxws:endpoint 
+		  id="wmSchedulerWS" 
+		  implementor="com.kt.oss.wmIntgl.integration.neosswm2intgl.provider.impl.WMSchedulerServiceProviderImpl" 
+		  address="/WmSchedulerWS" />
+		  
+	<jaxws:endpoint 
+		  id="schedulerWS" 
+		  implementor="com.kt.oss.wmIntgl.integration.scheduler2intgl.provider.impl.SchedulerServiceProviderImpl" 
+		  address="/SchedulerWS" >
+		<jaxws:properties>
+		    <entry key="org.apache.cxf.stax.force-start-document">
+		        <bean class="java.lang.Boolean">
+		            <constructor-arg value="true"/>
+		        </bean>
+		    </entry>
+		</jaxws:properties>	
+	</jaxws:endpoint>
+		  
+	<jaxws:endpoint 
+		  id="wmAppointmentWS" 
+		  implementor="com.kt.oss.wmIntgl.integration.appointment2intgl.provider.impl.WMAppointmentServiceProviderImpl" 
+		  address="/WmAppointmentWS" />	
+	
+	<!--  	  
+	<oxm:jaxb2-marshaller id="scheduleMarshaller">
+	    <oxm:class-to-be-bound name="com._360scheduling.schema.dsscheduledata.DsScheduleData"/>
+	</oxm:jaxb2-marshaller>
+	
+	<oxm:jaxb2-marshaller id="modellingMarshaller">
+	    <oxm:class-to-be-bound name="com._360scheduling.schema.dsmodelling.DsModelling"/>
+	</oxm:jaxb2-marshaller>	
+	-->
+	
+	<bean id="scheduleMarshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+	    <property name="classesToBeBound">
+	        <list>
+	        	<value>com._360scheduling.schema.dsscheduledata.DsScheduleData</value>
+	        </list>
+	    </property>
+	    <property name="marshallerProperties">
+	        <map>
+	            <entry>
+	                <key>
+	                    <util:constant static-field="javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT" />
+	               </key>
+	              <value type="java.lang.Boolean">true</value>
+	            </entry>
+	        </map>
+	    </property>
+	</bean>
+	
+	<bean id="modellingMarshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+	    <property name="classesToBeBound">
+	        <list>
+	        	<value>com._360scheduling.schema.dsmodelling.DsModelling</value>
+	        </list>
+	    </property>
+	    <property name="marshallerProperties">
+	        <map>
+	            <entry>
+	                <key>
+	                    <util:constant static-field="javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT" />
+	               </key>
+	              <value type="java.lang.Boolean">true</value>
+	            </entry>
+	        </map>
+	    </property>
+	</bean>	
+	
+	<bean id="systemDataMarshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+	    <property name="classesToBeBound">
+	        <list>
+	        	<value>com._360scheduling.schema.dssystemdata.DsSystemData</value>
+	        </list>
+	    </property>
+	    <property name="marshallerProperties">
+	        <map>
+	            <entry>
+	                <key>
+	                    <util:constant static-field="javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT" />
+	               </key>
+	              <value type="java.lang.Boolean">true</value>
+	            </entry>
+	        </map>
+	    </property>
+	</bean>		
+</beans>

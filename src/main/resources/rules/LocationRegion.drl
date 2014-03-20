@@ -1,0 +1,89 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrder;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.LocationRegion;
+
+// vstype == 1 이면
+// region_id : [officeScode] +"_"+ [workTeamCode] 매핑
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+rule "VS1_LocationRegion"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		locationRegion : LocationRegion()
+	then
+		locationRegion.setRegionId(order.getOfficeScode() + "_" + order.getWorkTeamCode());
+		locationRegion.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+        update(locationRegion);
+end
+
+// vstype == 5 이면
+// region_id : [officeScode] +"_"+ [workTeamCode] 매핑
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+rule "VS5_LocationRegion"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS5)
+		locationRegion : LocationRegion()
+	then
+		locationRegion.setRegionId(order.getOfficeScode() + "_" + order.getWorkTeamCode());
+		locationRegion.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+        update(locationRegion);
+end
+
+// vstype == 6 이면
+// region_id : [officeScode] +"_"+ [workTeamCode] 매핑 
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+rule "VS6_LocationRegion"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		locationRegion : LocationRegion()
+	then
+		locationRegion.setRegionId(order.getOfficeScode() + "_" + order.getWorkTeamCode());
+		locationRegion.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+        update(locationRegion);
+end
+
+// vstype == 6C 이면
+// region_id : [officeScode] +"_"+ [workTeamCode] 매핑 
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+rule "VS6C_LocationRegion"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6C)
+		locationRegion : LocationRegion()
+	then
+		locationRegion.setRegionId(order.getOfficeScode() + "_" + order.getWorkTeamCode());
+		locationRegion.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+        update(locationRegion);
+end
+
+// vstype == 10 이면
+// region_id : [officeScode] +"_"+ [workTeamCode] 매핑
+// Location_id : [dongCode] + [addNoType] + [addrNo] + [addrHo] + [officeScode] + [workTeamCode] + [ trim(right(addrEtc, 5)) ] ->officeScode에서 첫자리 'R' 제거 ->addrEtc가 5자 미안일 경우 trim해서 그대로 매핑
+rule "VS10_LocationRegion"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS10)
+		locationRegion : LocationRegion()
+	then
+		locationRegion.setRegionId(order.getOfficeScode() + "_" + order.getWorkTeamCode());
+		locationRegion.setLocationId((order.getDongCode() + order.getAddrNoType() + order.getAddrNo() + order.getAddrHo() + order.getOfficeScode().substring(1) + order.getWorkTeamCode() + StringUtil.rightstring(order.getAddrEtc(), 5, false)).replaceAll(" ", ""));
+        update(locationRegion);
+end

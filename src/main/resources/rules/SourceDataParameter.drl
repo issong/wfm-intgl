@@ -1,0 +1,92 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.domain.intgl.MappingTypeVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.SourceDataParameter;
+
+// vstype == 1 이고 int == 0 이면
+// source_data_type_id : (1),(2) 모두 Default 값으로 'RAM' 설정
+// parameter_name : (1) 'include_rota_data' / (2) 'rota_id' 설정
+// parameter_value : (1) 'True' / (2) [sourceId] 설정
+rule "VS1_SourceDataParameter1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		sourceDataParameter : SourceDataParameter()
+	then
+		sourceDataParameter.setSourceDataTypeId("RAM");
+		sourceDataParameter.setParameterName("include_rota_data");
+		sourceDataParameter.setParameterValue("True");
+        update(sourceDataParameter);
+end
+
+// vstype == 1 이고 int == 1 이면
+// source_data_type_id : (1),(2) 모두 Default 값으로 'RAM' 설정
+// parameter_name : (1) 'include_rota_data' / (2) 'rota_id' 설정
+// parameter_value : (1) 'True' / (2) [sourceId] 설정
+rule "VS1_SourceDataParameter2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		sourceDataParameter : SourceDataParameter()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		sourceDataParameter.setSourceDataTypeId("RAM");
+		sourceDataParameter.setParameterName("rota_id");
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		sourceDataParameter.setParameterValue(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	// 여기는 원본 소스
+		//sourceDataParameter.setParameterValue(intglVo.getSourceId());
+        update(sourceDataParameter);
+end
+
+// vstype == 12 이고 int == 0 이면
+// source_data_type_id : (1),(2) 모두 Default 값으로 'RAM' 설정
+// parameter_name : (1) 'include_rota_data' / (2) 'rota_id' 설정
+// parameter_value : (1) 'True' / (2) [sourceId] 설정
+rule "VS12_SourceDataParameter1"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 0)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS12)
+		sourceDataParameter : SourceDataParameter()
+	then
+		sourceDataParameter.setSourceDataTypeId("RAM");
+		sourceDataParameter.setParameterName("include_rota_data");
+		sourceDataParameter.setParameterValue("True");
+        update(sourceDataParameter);
+end
+
+// vstype == 12 이고 int == 1 이면
+// source_data_type_id : (1),(2) 모두 Default 값으로 'RAM' 설정
+// parameter_name : (1) 'include_rota_data' / (2) 'rota_id' 설정
+// parameter_value : (1) 'True' / (2) [sourceId] 설정
+rule "VS12_SourceDataParameter2"
+	dialect "java"
+	no-loop
+	when
+		i : Integer(intValue() == 1)
+		intglVo : IntglDataVo(vsType == ScenarioType.VS12)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		sourceDataParameter : SourceDataParameter()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		sourceDataParameter.setSourceDataTypeId("RAM");
+		sourceDataParameter.setParameterName("rota_id");
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		sourceDataParameter.setParameterValue(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	// 여기는 원본 소스
+		//sourceDataParameter.setParameterValue(intglVo.getSourceId());
+        update(sourceDataParameter);
+end

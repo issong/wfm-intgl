@@ -1,0 +1,36 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import java.util.Calendar;
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.ConversionUtil;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMAppointmentOrder;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.AppointmentRequest;
+
+// vstype == 6 이면
+// id : [appointmentRequestId] + '_' + [slotId] 매핑
+// period_start_datetime : [periodStartDt] 매핑
+// period_end_datetime : [periodEndDt] 매핑
+// day_pattern : [dayPattern] 매핑
+// open_time : [openTime] 매핑
+// close_time : [closeTime] 매핑
+// time_zone : default '' 설정
+// activity_id : [appointmentRequestId] 매핑
+// start_based : Default 값으로 true 설정
+// appointment_request_id : [appointmentRequestId] 매핑
+rule "VS6_AppointmentRequest"
+	dialect "java"
+	no-loop
+	when
+		order : WMAppointmentOrder()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS6)
+		appointmentRequest : AppointmentRequest()
+	then
+		appointmentRequest.setId(intglVo.getAppointmentRequestId());
+		appointmentRequest.setActivityId(intglVo.getAppointmentRequestId());
+		appointmentRequest.setOfferExpiryDatetime(ConversionUtil.getXMLGregorianCalendar((order.getBt360OfferExpiry() > 0)? StringUtil.toDate(StringUtil.toDate(intglVo.getSourceDt(), Calendar.MINUTE, order.getBt360OfferExpiry(), null), null) : intglVo.getSourceDt()));
+		appointmentRequest.setAppointmentWindowLength(null);
+        update(appointmentRequest);
+end

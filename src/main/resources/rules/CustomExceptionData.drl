@@ -1,0 +1,73 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.WMCustomException;
+import com.kt.oss.wmIntgl.datahandler.domain.WMWorkOrderStatus;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.CustomExceptionData;
+
+// vstype == 4 이면
+// custom_exception_Id : [worktype] + [officeScode] + [workOdrNum ] 매핑
+// label : Default 값으로 '구분' 설정
+// value : Default 값으로 '완료오더-작업자사번부재' 설정
+// Sequence : Default 값으로 1 설정
+rule "VS4_CustomExceptionData"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS4)
+		rulesVo : RulesVo()
+		customExceptionData : CustomExceptionData()
+	then
+		customExceptionData.setCustomExceptionId(order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum());
+		customExceptionData.setLabel(rulesVo.getLabel());
+		customExceptionData.setValue(rulesVo.getValue());
+		customExceptionData.setSequence(1);
+        update(customExceptionData);
+end
+
+// vstype == 7C 이면
+// custom_exception_Id : [workOdrNum ] 매핑
+// label : Default 값으로 '구분' 설정
+// value : Default 값으로 '재TM대상' 설정
+// Sequence : Default 값으로 1 설정
+rule "VS7C_CustomExceptionData"
+	dialect "java"
+	no-loop
+	when
+		order : WMWorkOrderStatus()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS7C)
+		rulesVo : RulesVo()
+		customExceptionData : CustomExceptionData()
+	then
+		customExceptionData.setCustomExceptionId(order.getWorkOdrNum());
+		customExceptionData.setLabel(rulesVo.getLabel());
+		customExceptionData.setValue(rulesVo.getValue());
+		customExceptionData.setSequence(1);
+        update(customExceptionData);
+end
+
+// vstype == 90 이면
+// custom_exception_Id : if [workerId] <> '' then [workerId] + [bt360ExceptionType] 매핑 else [worktype] + [officeScode] + [workOdrNum ] + [bt360ExceptionType] 매핑 end if  
+// label : [bt360Label] 매핑
+// value : [bt360Value] 매핑
+// Sequence : Default 값으로 1 설정
+rule "VS90_CustomExceptionData"
+	dialect "java"
+	no-loop
+	when
+		order : WMCustomException()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS90)
+		customExceptionData : CustomExceptionData()
+	then
+		customExceptionData.setCustomExceptionId(StringUtil.isNotEmpty(order.getWorkerId())? order.getWorkerId() + order.getBt360ExceptionType() : order.getWorkType() + order.getOfficeScode() + order.getWorkOdrNum() + order.getBt360ExceptionType());
+		customExceptionData.setLabel(order.getBt360Label());
+		customExceptionData.setValue(order.getBt360Value());
+		customExceptionData.setSequence(1);
+        update(customExceptionData);
+end

@@ -1,0 +1,54 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.domain.intgl.MappingTypeVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com._360scheduling.schema.dsscheduledata.DsScheduleData.SourceData;
+
+// vstype == 1 이면
+// source_data_type_id : Default 값으로 'RAM' 설정
+// source_dataset_id : [sourceId] 매핑 : 하지만 현재 Default  값으로 'SDH' 설정
+// source_db  : Default 값으로 '360 Modelling Database' 설정
+rule "VS1_SourceData"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS1)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		sourceData : SourceData()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		sourceData.setSourceDataTypeId("RAM");
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		sourceData.setSourceDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	// 여기는 원본 소스
+		//sourceData.setSourceDatasetId(intglVo.getSourceId());
+		sourceData.setSourceDb("360 Modelling Database");
+        update(sourceData);
+end
+
+// vstype == 12 이면
+// source_data_type_id : Default 값으로 'RAM' 설정
+// source_dataset_id : [sourceId] 매핑 : 하지만 현재 Default  값으로 'SDH' 설정
+// source_db  : Default 값으로 '360 Modelling Database' 설정
+rule "VS12_SourceData"
+	dialect "java"
+	no-loop
+	when
+		intglVo : IntglDataVo(vsType == ScenarioType.VS12)
+		rulesDB : RulesDB()
+		mappingTypeVo : MappingTypeVo()
+		sourceData : SourceData()
+	then
+		mappingTypeVo = rulesDB.selectMappingType(intglVo.getVsType(), intglVo.getSourceDt());
+		sourceData.setSourceDataTypeId("RAM");
+    	// 여기는 UAT를 위해 임시로 만들어짐
+		sourceData.setSourceDatasetId(intglVo.getSourceId() + mappingTypeVo.getDsPostfix());
+    	// 여기는 원본 소스
+		//sourceData.setSourceDatasetId(intglVo.getSourceId());
+		sourceData.setSourceDb("360 Modelling Database");
+        update(sourceData);
+end

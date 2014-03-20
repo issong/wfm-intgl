@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.integration.neosswm2intgl.dao.Neosswm2IntglDao" >
+
+	<!-- 
+		- InputReference Mapping Data 조회
+		-->    
+	<select id="getInputreference" parameterType="InputReferenceDataVo" resultType="InputReferenceDataVo">
+		SELECT
+			VSTYPE as vsType,
+			DSTYPE as dsType,
+			TSTYPE as tsType,
+			IRTIME as irTime
+		FROM TB_WM_MAPPINGINPUTREFERENCE
+		WHERE VSTYPE = 'VS_ALL'
+	</select> 
+
+	<!-- 
+		- InputReference Mapping Data 변경
+		-->    
+	<update id="updateInputreference" parameterType="InputReferenceDataVo">
+		UPDATE TB_WM_MAPPINGINPUTREFERENCE
+		SET IRTIME = #{irTime}
+		<if test="dsType != null">, DSTYPE = #{dsType}</if>
+		<if test="tsType != null">, TSTYPE = #{tsType}</if>
+		WHERE VSTYPE = 'VS_ALL'
+	</update>  
+	
+	<!-- 
+		- CSCT VS1 입수시 VS1_PROC_STATUS flag 를 변경합니다.
+		-->    
+	<update id="updateMapping360IoForVs1" parameterType="WMMapping360IoVo">
+		UPDATE TB_WM_MAPPING360IO
+		SET VS1_PROC_STATUS = #{vs1ProcStatus}
+		<if test="vs1LastProcDt != null">, VS1_LAST_PROC_DT = SYSTIMESTAMP(6)</if>
+		WHERE CSCT_CD = #{csctId}
+	</update>  
+
+	<!-- 
+		- 해당하는 CSCT 의 VS1가 처리중인지 조회합니다.
+		--> 	
+	<select id="selectMapping360IoForVs1" parameterType="string" resultType="string">
+		SELECT
+			VS1_PROC_STATUS
+		FROM
+			TB_WM_MAPPING360IO
+		WHERE CSCT_CD = #{csctId}
+	</select>
+	
+	<!-- 
+		- 해당하는 CSCT 의 VS3 데이터를 삭제합니다.
+		--> 	
+	<delete id="deleteVS3SourceData" parameterType="string">
+		DELETE FROM TB_WM_R_WORKORDERSTATUS
+		WHERE SOURCEID = #{csctId}
+	</delete>	
+
+	<!-- 
+		- 해당하는 CSCT 의 VS8 데이터를 삭제합니다.
+		--> 	
+	<delete id="deleteVS8SourceData" parameterType="string">
+		DELETE FROM TB_WM_R_WORKORDERKEY
+		WHERE SOURCEID = #{csctId}
+	</delete>	
+
+	<!-- 
+		- 해당하는 CSCT 의 VS10 데이터를 삭제합니다.
+		--> 	
+	<delete id="deleteVS10SourceData" parameterType="string">
+		DELETE FROM TB_WM_R_WORKORDER
+		WHERE SOURCEID = #{csctId}
+	</delete>	
+
+	<!-- 
+		- 재송신이 끝난 VS3 데이터의 송신시각을 업데이트 합니다.
+		--> 	
+	<update id="updateVS3SourceData" parameterType="WMWorkOrderParamAll">
+		UPDATE TB_WM_R_WORKORDERSTATUS
+		SET IL_SEND_DT = SYSTIMESTAMP(6)
+		WHERE VSTYPE = #{vsType}
+		AND SOURCEID = #{sourceId}
+		AND SOURCEDT = #{sourceDt}
+		AND WORKTYPE = #{vs3.workType}
+		AND OFFICESCODE = #{vs3.officeScode}
+		AND WORKODRNUM = #{vs3.workOdrNum}
+	</update>
+
+	<!-- 
+		- 재송신이 끝난 VS8 데이터의 송신시각을 업데이트 합니다.
+		--> 	
+	<update id="updateVS8SourceData" parameterType="WMWorkOrderParamAll">
+		UPDATE TB_WM_R_WORKORDERKEY
+		SET IL_SEND_DT = SYSTIMESTAMP(6)
+		WHERE VSTYPE = #{vsType}
+		AND SOURCEID = #{sourceId}
+		AND SOURCEDT = #{sourceDt}
+		AND WORKTYPE = #{vs8.workType}
+		AND OFFICESCODE = #{vs8.officeScode}
+		AND WORKODRNUM = #{vs8.workOdrNum}
+	</update>
+	
+	<!-- 
+		- 재송신이 끝난 VS5, VS10 데이터의 송신시각을 업데이트 합니다.
+		--> 	
+	<update id="updateVS10SourceData" parameterType="WMWorkOrderParamAll">
+		UPDATE TB_WM_R_WORKORDER
+		SET IL_SEND_DT = SYSTIMESTAMP(6)
+		WHERE VSTYPE = #{vsType}
+		AND SOURCEID = #{sourceId}
+		AND SOURCEDT = #{sourceDt}
+		AND WORKTYPE = #{vs5.workType}
+		AND OFFICESCODE = #{vs5.officeScode}
+		AND WORKODRNUM = #{vs5.workOdrNum}
+	</update>
+			
+	<!-- 
+		- NeOSS 에서 받은 VS3 데이터를 insert 합니다. 
+		--> 	
+	<insert id="insertVS3SourceData" parameterType="WMWorkOrderStatusParamExt">
+		INSERT INTO TB_WM_R_WORKORDERSTATUS (
+		  VSTYPE
+		  , SOURCEID
+		  , SOURCEDT
+		  , WORKTYPE
+		  , OFFICESCODE
+		  , WORKODRNUM 
+		  , ODRNUM
+		  , TTID
+		  , WORKPROGSTATE
+		  , WORKPROCSTATE
+		  , BT360ADDWORKPROGSTATE 
+		  , WORKSTATEDT
+		  , DURATION
+		  , HIGHLIGHT
+		  , REASON
+		  , REASONVALUE
+		  , BT360FIXEDODRYN
+		  , BT360FIXEDWORKERID
+		  , BT360FIXEDVISITDT 
+		  , BT360LOGONOFFSTATE
+		  , BT360LOGONOFFDT
+		  , BT360LOGONOFFWORKERID 
+		  , BT360COMMITVALUE
+		) VALUES (
+          #{vsType, jdbcType=VARCHAR}
+          , #{sourceId, jdbcType=VARCHAR}
+          , #{sourceDt, jdbcType=VARCHAR}
+          , #{order.workType, jdbcType=VARCHAR}
+          , #{order.officeScode, jdbcType=VARCHAR}
+          , #{order.workOdrNum, jdbcType=VARCHAR}
+          , #{order.odrNum, jdbcType=VARCHAR}
+          , #{order.ttId, jdbcType=VARCHAR}
+          , #{order.workProgState, jdbcType=VARCHAR}
+          , #{order.workProcState, jdbcType=VARCHAR}
+          , #{order.bt360AddWorkProgState, jdbcType=VARCHAR}
+          , #{order.workStateDt, jdbcType=VARCHAR}
+          , #{order.duration, jdbcType=VARCHAR}
+          , #{order.highlight, jdbcType=VARCHAR}
+          , #{order.reason, jdbcType=VARCHAR}
+          , #{order.reasonValue, jdbcType=VARCHAR}
+          , #{order.bt360FixedOdrYn, jdbcType=VARCHAR}
+          , #{order.bt360FixedWorkerId, jdbcType=VARCHAR}
+          , #{order.bt360FixedVisitDt, jdbcType=VARCHAR}
+          , #{order.bt360LogOnOffState, jdbcType=VARCHAR}
+          , #{order.bt360LogOnOffDt, jdbcType=VARCHAR}
+          , #{order.bt360LogOnOffWorkerId, jdbcType=VARCHAR}
+          , #{order.bt360CommitValue, jdbcType=VARCHAR}
+		  )
+	</insert>
+
+	<!-- 
+		- NeOSS 에서 받은 VS8 데이터를 insert 합니다. 
+		--> 	
+	<insert id="insertVS8SourceData" parameterType="WMWorkOrderKeyParamExt">
+		INSERT INTO TB_WM_R_WORKORDERKEY (
+		  VSTYPE
+		  , SOURCEID
+		  , SOURCEDT
+		  , WORKTYPE
+		  , OFFICESCODE
+		  , WORKODRNUM 
+		  , ODRNUM
+		  , TTID
+		) VALUES (
+          #{vsType, jdbcType=VARCHAR}
+          , #{sourceId, jdbcType=VARCHAR}
+          , #{sourceDt, jdbcType=VARCHAR}
+          , #{order.workType, jdbcType=VARCHAR}
+          , #{order.officeScode, jdbcType=VARCHAR}
+          , #{order.workOdrNum, jdbcType=VARCHAR}
+          , #{order.odrNum, jdbcType=VARCHAR}
+          , #{order.ttId, jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 
+		- NeOSS 에서 받은 VS5, VS10 데이터를 insert 합니다. 
+		--> 	
+	<insert id="insertVS10SourceData" parameterType="WMWorkOrderParamExt">
+		INSERT INTO TB_WM_R_WORKORDER (
+		 	VSTYPE
+		 	, SOURCEID
+		 	, SOURCEDT
+		 	, WORKTYPE
+		 	, OFFICESCODE
+		 	, WORKODRNUM 
+		 	, ODRNUM
+		 	, TTID
+		 	, SVCMAINCLSCODE
+		 	, COMPANYCODE
+		 	, CONCURRENTODRFLAG
+		 	, CONCURRENTSEQ 
+		 	, DONGCODE
+		 	, ADDRNOTYPE 
+		 	, WORKODRTYPECODE
+		 	, WORKODRTYPENUM
+		 	, ADDR
+		 	, ADDRETC 
+		 	, ADDRNO
+		 	, ADDRHO
+		 	, SVCID 
+		 	, CUSTNAME
+		 	, CONTACTTELNUM 
+		 	, REMARK
+		 	, REPORTEROPINION
+		 	, SENDDT
+		 	, RCVDT 
+		 	, WORKPROGSTATE 
+		 	, WORKPROCSTATE 
+		 	, BT360ADDWORKPROGSTATE 
+		 	, WORKSTATEDT
+		 	, BT360SPECIALWORKTYPECODE
+		 	, BT360VVIPYN
+		 	, BT360SLASTARTDT
+		 	, BT360SLAENDDT 
+		 	, BT360FIXEDODRYN
+		 	, BT360FIXEDWORKERID
+		 	, BT360FIXEDVISITDT
+		 	, BT360EXPWORKERID 
+		 	, BT360PREFERENCE
+		 	, BT360LOGONOFFSTATE
+		 	, BT360LOGONOFFDT
+		 	, BT360LOGONOFFWORKERID 
+		 	, WORKTEAMCODE
+		 	, REASON
+		 	, REASONVALUE
+		 	, BT360TECHMETHOD
+		 ) VALUES (
+            #{vsType, jdbcType=VARCHAR}
+            , #{sourceId, jdbcType=VARCHAR}
+            , #{sourceDt, jdbcType=VARCHAR}
+            , #{order.workType, jdbcType=VARCHAR}
+            , #{order.officeScode, jdbcType=VARCHAR}
+            , #{order.workOdrNum, jdbcType=VARCHAR}
+            , #{order.odrNum, jdbcType=VARCHAR}
+            , #{order.ttId, jdbcType=VARCHAR}
+            , #{order.svcMainClsCode, jdbcType=VARCHAR}
+            , #{order.companyCode, jdbcType=VARCHAR}
+            , #{order.concurrentOdrFlag, jdbcType=VARCHAR}
+            , #{order.concurrentSeq, jdbcType=VARCHAR}
+            , #{order.dongCode, jdbcType=VARCHAR}
+            , #{order.addrNoType, jdbcType=VARCHAR}
+            , #{order.workOdrTypeCode, jdbcType=VARCHAR}
+            , #{order.workOdrTypeNum, jdbcType=VARCHAR}
+            , #{order.addr, jdbcType=VARCHAR}
+            , #{order.addrEtc, jdbcType=VARCHAR}
+            , #{order.addrNo, jdbcType=VARCHAR}
+            , #{order.addrHo, jdbcType=VARCHAR}
+            , #{order.svcId, jdbcType=VARCHAR}
+            , #{order.custName, jdbcType=VARCHAR}
+            , #{order.contactTelNum, jdbcType=VARCHAR}
+            , #{order.remark, jdbcType=VARCHAR}
+            , #{order.reporterOpinion, jdbcType=VARCHAR}
+            , #{order.sendDt, jdbcType=VARCHAR}
+            , #{order.rcvDt, jdbcType=VARCHAR}
+            , #{order.workProgState, jdbcType=VARCHAR}
+            , #{order.workProcState, jdbcType=VARCHAR}
+            , #{order.bt360AddWorkProgState, jdbcType=VARCHAR}
+            , #{order.workStateDt, jdbcType=VARCHAR}
+            , #{order.bt360SpecialWorkTypeCode, jdbcType=VARCHAR}
+            , #{order.bt360VvipYn, jdbcType=VARCHAR}
+            , #{order.bt360SlaStartDt, jdbcType=VARCHAR}
+            , #{order.bt360SlaEndDt, jdbcType=VARCHAR}
+            , #{order.bt360FixedOdrYn, jdbcType=VARCHAR}
+            , #{order.bt360FixedWorkerId, jdbcType=VARCHAR}
+            , #{order.bt360FixedVisitDt, jdbcType=VARCHAR}
+            , #{order.bt360ExpWorkerId, jdbcType=VARCHAR}
+            , #{order.bt360Preference, jdbcType=VARCHAR}
+            , #{order.bt360LogOnOffState, jdbcType=VARCHAR}
+            , #{order.bt360LogOnOffDt, jdbcType=VARCHAR}
+            , #{order.bt360LogOnOffWorkerId, jdbcType=VARCHAR}
+            , #{order.workTeamCode, jdbcType=VARCHAR}
+            , #{order.reason, jdbcType=VARCHAR}
+            , #{order.reasonValue, jdbcType=VARCHAR}
+            , #{order.bt360TechMethod, jdbcType=VARCHAR}
+		 )	
+	</insert>		
+
+	<!-- 
+		- VS10 Data 조회
+		-->    
+	<select id="selectVS10SourceData" parameterType="string" resultType="WMWorkOrderParamExt">
+		SELECT /*+ INDEX_ASC( TB_WM_R_WORKORDER XPKTB_TB_WM_R_WORKORDER) */
+		 	  VSTYPE                     	as vsType
+		 	  , SOURCEID                 	as sourceId
+		 	  , SOURCEDT                 	as sourceDt
+		 	  , WORKTYPE                 	as "order.workType"
+		 	  , OFFICESCODE              	as "order.officeScode"
+		 	  , WORKODRNUM               	as "order.workOdrNum"
+		 	  , ODRNUM                   	as "order.odrNum"
+		 	  , TTID                     	as "order.ttId"
+		 	  , SVCMAINCLSCODE           	as "order.svcMainClsCode"
+		 	  , COMPANYCODE              	as "order.companyCode"
+		 	  , CONCURRENTODRFLAG        	as "order.concurrentOdrFlag"
+		 	  , CONCURRENTSEQ            	as "order.concurrentSeq"
+		 	  , DONGCODE                 	as "order.dongCode"
+		 	  , ADDRNOTYPE               	as "order.addrNoType"
+		 	  , WORKODRTYPECODE          	as "order.workOdrTypeCode"
+		 	  , WORKODRTYPENUM           	as "order.workOdrTypeNum"
+		 	  , ADDR                     	as "order.addr"
+		 	  , ADDRETC                  	as "order.addrEtc"
+		 	  , ADDRNO                   	as "order.addrNo"
+		 	  , ADDRHO                   	as "order.addrHo"
+		 	  , SVCID                    	as "order.svcId"
+		 	  , CUSTNAME                 	as "order.custName"
+		 	  , CONTACTTELNUM            	as "order.contactTelNum"
+		 	  , REMARK                   	as "order.remark"
+		 	  , REPORTEROPINION          	as "order.reporterOpinion"
+		 	  , SENDDT                   	as "order.sendDt"
+		 	  , RCVDT                    	as "order.rcvDt"
+		 	  , WORKPROGSTATE            	as "order.workProgState"
+		 	  , WORKPROCSTATE            	as "order.workProcState"
+		 	  , BT360ADDWORKPROGSTATE    	as "order.bt360AddWorkProgState"
+		 	  , WORKSTATEDT              	as "order.workStateDt"
+		 	  , BT360SPECIALWORKTYPECODE 	as "order.bt360SpecialWorkTypeCode"
+		 	  , BT360VVIPYN              	as "order.bt360VvipYn"
+		 	  , BT360SLASTARTDT          	as "order.bt360SlaStartDt"
+		 	  , BT360SLAENDDT            	as "order.bt360SlaEndDt"
+		 	  , BT360FIXEDODRYN          	as "order.bt360FixedOdrYn"
+		 	  , BT360FIXEDWORKERID       	as "order.bt360FixedWorkerId"
+		 	  , BT360FIXEDVISITDT        	as "order.bt360FixedVisitDt"
+		 	  , BT360EXPWORKERID         	as "order.bt360ExpWorkerId"
+		 	  , BT360PREFERENCE          	as "order.bt360Preference"
+		 	  , BT360LOGONOFFSTATE       	as "order.bt360LogOnOffState"
+		 	  , BT360LOGONOFFDT          	as "order.bt360LogOnOffDt"
+		 	  , BT360LOGONOFFWORKERID    	as "order.bt360LogOnOffWorkerId"
+		 	  , WORKTEAMCODE             	as "order.workTeamCode"
+		 	  , REASON                      as "order.reason"
+		 	  , REASONVALUE                 as "order.reasonValue"
+		FROM 
+			TB_WM_R_WORKORDER
+        WHERE
+            VSTYPE IN ('VS5', 'VS10')
+            AND SOURCEID = #{csctId}
+            AND IL_SEND_DT IS NULL
+            AND ROWNUM = 1
+	</select> 
+	
+	<!-- 
+		- VS3 Data 조회
+		-->    
+	<select id="selectVS3SourceData" parameterType="string" resultType="WMWorkOrderStatusParamExt">
+		SELECT	/*+ INDEX_ASC( TB_WM_R_WORKORDERSTATUS XPKTB_TB_WM_R_WORKORDERSTATUS) */
+		  VSTYPE                      as vsType
+		  , SOURCEID                  as sourceId
+		  , SOURCEDT                  as sourceDt
+		  , WORKTYPE                  as "order.workType"
+		  , OFFICESCODE               as "order.officeScode"
+		  , WORKODRNUM                as "order.workOdrNum"
+		  , ODRNUM                    as "order.odrNum"
+		  , TTID                      as "order.ttId"
+		  , WORKPROGSTATE             as "order.workProgState"
+		  , WORKPROCSTATE             as "order.workProcState"
+		  , BT360ADDWORKPROGSTATE     as "order.bt360AddWorkProgState"
+		  , WORKSTATEDT               as "order.workStateDt"
+		  , DURATION                  as "order.duration"
+		  , HIGHLIGHT                 as "order.highlight"
+		  , REASON                    as "order.reason"
+		  , REASONVALUE               as "order.reasonValue"
+		  , BT360FIXEDODRYN           as "order.bt360FixedOdrYn"
+		  , BT360FIXEDWORKERID        as "order.bt360FixedWorkerId"
+		  , BT360FIXEDVISITDT         as "order.bt360FixedVisitDt"
+		  , BT360LOGONOFFSTATE        as "order.bt360LogOnOffState"
+		  , BT360LOGONOFFDT           as "order.bt360LogOnOffDt"
+		  , BT360LOGONOFFWORKERID     as "order.bt360LogOnOffWorkerId"
+		  , BT360COMMITVALUE          as "order.bt360CommitValue"
+		FROM
+			TB_WM_R_WORKORDERSTATUS
+        WHERE
+            VSTYPE = 'VS3'
+            AND SOURCEID = #{csctId}
+            AND IL_SEND_DT IS NULL
+            AND ROWNUM = 1
+	</select>
+
+	<!-- 
+		- VS8 Data 조회
+		-->    
+	<select id="selectVS8SourceData" parameterType="string" resultType="WMWorkOrderKeyParamExt">
+		SELECT /*+ INDEX_ASC( TB_WM_R_WORKORDERKEY XPKTB_TB_WM_R_WORKORDERKEY) */
+		  VSTYPE                    as vsType
+		  , SOURCEID                  as sourceId
+		  , SOURCEDT                  as sourceDt
+		  , WORKTYPE                  as "order.workType"
+		  , OFFICESCODE               as "order.officeScode"
+		  , WORKODRNUM                as "order.workOdrNum"
+		  , ODRNUM                    as "order.odrNum"
+		  , TTID                      as "order.ttId"
+		FROM 
+			TB_WM_R_WORKORDERKEY
+        WHERE
+            VSTYPE = 'VS8'
+            AND SOURCEID = #{csctId}
+            AND IL_SEND_DT IS NULL
+            AND ROWNUM = 1
+	</select>  
+	
+    <!-- 
+        - 송신할 전제 시나리오 데이터 조회
+        -->    
+    <select id="selectAllSourceData" parameterType="string" resultType="WMWorkOrderParamAll">
+        SELECT
+            A.*
+        FROM (
+            SELECT  /*+ INDEX_ASC( TB_WM_R_WORKORDER XPKTB_TB_WM_R_WORKORDER) */
+                VSTYPE                      as vsType
+                , SOURCEID                  as sourceId
+                , SOURCEDT                  as sourceDt
+                , WORKTYPE                  as "vs5.workType"
+                , OFFICESCODE               as "vs5.officeScode"
+                , WORKODRNUM                as "vs5.workOdrNum"
+                , ODRNUM                    as "vs5.odrNum"
+                , TTID                      as "vs5.ttId"
+                , SVCMAINCLSCODE            as "vs5.svcMainClsCode"
+                , COMPANYCODE               as "vs5.companyCode"
+                , CONCURRENTODRFLAG         as "vs5.concurrentOdrFlag"
+                , CONCURRENTSEQ             as "vs5.concurrentSeq"
+                , DONGCODE                  as "vs5.dongCode"
+                , ADDRNOTYPE                as "vs5.addrNoType"
+                , WORKODRTYPECODE           as "vs5.workOdrTypeCode"
+                , WORKODRTYPENUM            as "vs5.workOdrTypeNum"
+                , ADDR                      as "vs5.addr"
+                , ADDRETC                   as "vs5.addrEtc"
+                , ADDRNO                    as "vs5.addrNo"
+                , ADDRHO                    as "vs5.addrHo"
+                , SVCID                     as "vs5.svcId"
+                , CUSTNAME                  as "vs5.custName"
+                , CONTACTTELNUM             as "vs5.contactTelNum"
+                , REMARK                    as "vs5.remark"
+                , REPORTEROPINION           as "vs5.reporterOpinion"
+                , SENDDT                    as "vs5.sendDt"
+                , RCVDT                     as "vs5.rcvDt"
+                , WORKPROGSTATE             as "vs5.workProgState"
+                , WORKPROCSTATE             as "vs5.workProcState"
+                , BT360ADDWORKPROGSTATE     as "vs5.bt360AddWorkProgState"
+                , WORKSTATEDT               as "vs5.workStateDt"
+                , BT360SPECIALWORKTYPECODE  as "vs5.bt360SpecialWorkTypeCode"
+                , BT360VVIPYN               as "vs5.bt360VvipYn"
+                , BT360SLASTARTDT           as "vs5.bt360SlaStartDt"
+                , BT360SLAENDDT             as "vs5.bt360SlaEndDt"
+                , BT360FIXEDODRYN           as "vs5.bt360FixedOdrYn"
+                , BT360FIXEDWORKERID        as "vs5.bt360FixedWorkerId"
+                , BT360FIXEDVISITDT         as "vs5.bt360FixedVisitDt"
+                , BT360EXPWORKERID          as "vs5.bt360ExpWorkerId"
+                , BT360PREFERENCE           as "vs5.bt360Preference"
+                , BT360LOGONOFFSTATE        as "vs5.bt360LogOnOffState"
+                , BT360LOGONOFFDT           as "vs5.bt360LogOnOffDt"
+                , BT360LOGONOFFWORKERID     as "vs5.bt360LogOnOffWorkerId"
+                , WORKTEAMCODE              as "vs5.workTeamCode"
+                , REASON                    as "vs5.reason"
+                , REASONVALUE               as "vs5.reasonValue"
+                , BT360TECHMETHOD           as "vs5.bt360TechMethod"
+                , null                      as "vs3.workType"
+                , null                      as "vs3.officeScode"
+                , null                      as "vs3.workOdrNum"
+                , null                      as "vs3.odrNum"
+                , null                      as "vs3.ttId"
+                , null                      as "vs3.workProgState"
+                , null                      as "vs3.workProcState"
+                , null                      as "vs3.bt360AddWorkProgState"
+                , null                      as "vs3.workStateDt"
+                , null                      as "vs3.duration"
+                , null                      as "vs3.highlight"
+                , null                      as "vs3.reason"
+                , null                      as "vs3.reasonValue"
+                , null                      as "vs3.bt360FixedOdrYn"
+                , null                      as "vs3.bt360FixedWorkerId"
+                , null                      as "vs3.bt360FixedVisitDt"
+                , null                      as "vs3.bt360LogOnOffState"
+                , null                      as "vs3.bt360LogOnOffDt"
+                , null                      as "vs3.bt360LogOnOffWorkerId"
+                , null                      as "vs3.bt360CommitValue"             
+                , null                      as "vs8.workType"
+                , null                      as "vs8.officeScode"
+                , null                      as "vs8.workOdrNum"
+                , null                      as "vs8.odrNum"
+                , null                      as "vs8.ttId"  
+            FROM
+                TB_WM_R_WORKORDER
+            WHERE
+                VSTYPE IN ('VS5', 'VS10')         
+                AND SOURCEID = #{csctId}
+                AND IL_SEND_DT IS NULL
+            UNION ALL    
+            SELECT  /*+ INDEX_ASC( TB_WM_R_WORKORDERSTATUS XPKTB_TB_WM_R_WORKORDERSTATUS) */
+               VSTYPE                      as vsType
+               , SOURCEID                  as sourceId
+               , SOURCEDT                  as sourceDt
+               , null                      as "vs5.workType"
+               , null                      as "vs5.officeScode"
+               , null                      as "vs5.workOdrNum"
+               , null                      as "vs5.odrNum"
+               , null                      as "vs5.ttId"
+               , null                      as "vs5.svcMainClsCode"
+               , null                      as "vs5.companyCode"
+               , null                      as "vs5.concurrentOdrFlag"
+               , null                      as "vs5.concurrentSeq"
+               , null                      as "vs5.dongCode"
+               , null                      as "vs5.addrNoType"
+               , null                      as "vs5.workOdrTypeCode"
+               , null                      as "vs5.workOdrTypeNum"
+               , null                      as "vs5.addr"
+               , null                      as "vs5.addrEtc"
+               , null                      as "vs5.addrNo"
+               , null                      as "vs5.addrHo"
+               , null                      as "vs5.svcId"
+               , null                      as "vs5.custName"
+               , null                      as "vs5.contactTelNum"
+               , null                      as "vs5.remark"
+               , null                      as "vs5.reporterOpinion"
+               , null                      as "vs5.sendDt"
+               , null                      as "vs5.rcvDt"
+               , null                      as "vs5.workProgState"
+               , null                      as "vs5.workProcState"
+               , null                      as "vs5.bt360AddWorkProgState"
+               , null                      as "vs5.workStateDt"
+               , null                      as "vs5.bt360SpecialWorkTypeCode"
+               , null                      as "vs5.bt360VvipYn"
+               , null                      as "vs5.bt360SlaStartDt"
+               , null                      as "vs5.bt360SlaEndDt"
+               , null                      as "vs5.bt360FixedOdrYn"
+               , null                      as "vs5.bt360FixedWorkerId"
+               , null                      as "vs5.bt360FixedVisitDt"
+               , null                      as "vs5.bt360ExpWorkerId"
+               , null                      as "vs5.bt360Preference"
+               , null                      as "vs5.bt360LogOnOffState"
+               , null                      as "vs5.bt360LogOnOffDt"
+               , null                      as "vs5.bt360LogOnOffWorkerId"
+               , null                      as "vs5.workTeamCode"
+               , null                      as "vs5.reason"
+               , null                      as "vs5.reasonValue"
+               , null                      as "vs5.bt360TechMethod"
+               , WORKTYPE                  as "vs3.workType"
+               , OFFICESCODE               as "vs3.officeScode"
+               , WORKODRNUM                as "vs3.workOdrNum"
+               , ODRNUM                    as "vs3.odrNum"
+               , TTID                      as "vs3.ttId"
+               , WORKPROGSTATE             as "vs3.workProgState"
+               , WORKPROCSTATE             as "vs3.workProcState"
+               , BT360ADDWORKPROGSTATE     as "vs3.bt360AddWorkProgState"
+               , WORKSTATEDT               as "vs3.workStateDt"
+               , DURATION                  as "vs3.duration"
+               , HIGHLIGHT                 as "vs3.highlight"
+               , REASON                    as "vs3.reason"
+               , REASONVALUE               as "vs3.reasonValue"
+               , BT360FIXEDODRYN           as "vs3.bt360FixedOdrYn"
+               , BT360FIXEDWORKERID        as "vs3.bt360FixedWorkerId"
+               , BT360FIXEDVISITDT         as "vs3.bt360FixedVisitDt"
+               , BT360LOGONOFFSTATE        as "vs3.bt360LogOnOffState"
+               , BT360LOGONOFFDT           as "vs3.bt360LogOnOffDt"
+               , BT360LOGONOFFWORKERID     as "vs3.bt360LogOnOffWorkerId"
+               , BT360COMMITVALUE          as "vs3.bt360CommitValue"             
+               , null                      as "vs8.workType"
+               , null                      as "vs8.officeScode"
+               , null                      as "vs8.workOdrNum"
+               , null                      as "vs8.odrNum"
+               , null                      as "vs8.ttId"  
+            FROM
+                TB_WM_R_WORKORDERSTATUS
+            WHERE
+                VSTYPE = 'VS3'
+                AND SOURCEID = #{csctId}
+                AND IL_SEND_DT IS NULL
+            UNION ALL   
+            SELECT  /*+ INDEX_ASC( TB_WM_R_WORKORDERKEY XPKTB_TB_WM_R_WORKORDERKEY) */
+               VSTYPE                      as vsType
+               , SOURCEID                  as sourceId
+               , SOURCEDT                  as sourceDt
+               , null                      as "vs5.workType"
+               , null                      as "vs5.officeScode"
+               , null                      as "vs5.workOdrNum"
+               , null                      as "vs5.odrNum"
+               , null                      as "vs5.ttId"
+               , null                      as "vs5.svcMainClsCode"
+               , null                      as "vs5.companyCode"
+               , null                      as "vs5.concurrentOdrFlag"
+               , null                      as "vs5.concurrentSeq"
+               , null                      as "vs5.dongCode"
+               , null                      as "vs5.addrNoType"
+               , null                      as "vs5.workOdrTypeCode"
+               , null                      as "vs5.workOdrTypeNum"
+               , null                      as "vs5.addr"
+               , null                      as "vs5.addrEtc"
+               , null                      as "vs5.addrNo"
+               , null                      as "vs5.addrHo"
+               , null                      as "vs5.svcId"
+               , null                      as "vs5.custName"
+               , null                      as "vs5.contactTelNum"
+               , null                      as "vs5.remark"
+               , null                      as "vs5.reporterOpinion"
+               , null                      as "vs5.sendDt"
+               , null                      as "vs5.rcvDt"
+               , null                      as "vs5.workProgState"
+               , null                      as "vs5.workProcState"
+               , null                      as "vs5.bt360AddWorkProgState"
+               , null                      as "vs5.workStateDt"
+               , null                      as "vs5.bt360SpecialWorkTypeCode"
+               , null                      as "vs5.bt360VvipYn"
+               , null                      as "vs5.bt360SlaStartDt"
+               , null                      as "vs5.bt360SlaEndDt"
+               , null                      as "vs5.bt360FixedOdrYn"
+               , null                      as "vs5.bt360FixedWorkerId"
+               , null                      as "vs5.bt360FixedVisitDt"
+               , null                      as "vs5.bt360ExpWorkerId"
+               , null                      as "vs5.bt360Preference"
+               , null                      as "vs5.bt360LogOnOffState"
+               , null                      as "vs5.bt360LogOnOffDt"
+               , null                      as "vs5.bt360LogOnOffWorkerId"
+               , null                      as "vs5.workTeamCode"
+               , null                      as "vs5.reason"
+               , null                      as "vs5.reasonValue"
+               , null                      as "vs5.bt360TechMethod"
+               , null                      as "vs3.workType"
+               , null                      as "vs3.officeScode"
+               , null                      as "vs3.workOdrNum"
+               , null                      as "vs3.odrNum"
+               , null                      as "vs3.ttId"
+               , null                      as "vs3.workProgState"
+               , null                      as "vs3.workProcState"
+               , null                      as "vs3.bt360AddWorkProgState"
+               , null                      as "vs3.workStateDt"
+               , null                      as "vs3.duration"
+               , null                      as "vs3.highlight"
+               , null                      as "vs3.reason"
+               , null                      as "vs3.reasonValue"
+               , null                      as "vs3.bt360FixedOdrYn"
+               , null                      as "vs3.bt360FixedWorkerId"
+               , null                      as "vs3.bt360FixedVisitDt"
+               , null                      as "vs3.bt360LogOnOffState"
+               , null                      as "vs3.bt360LogOnOffDt"
+               , null                      as "vs3.bt360LogOnOffWorkerId"
+               , null                      as "vs3.bt360CommitValue"             
+               , WORKTYPE                  as "vs8.workType"
+               , OFFICESCODE               as "vs8.officeScode"
+               , WORKODRNUM                as "vs8.workOdrNum"
+               , ODRNUM                    as "vs8.odrNum"
+               , TTID                      as "vs8.ttId"  
+            FROM 
+                TB_WM_R_WORKORDERKEY
+            WHERE
+                VSTYPE = 'VS8'
+                AND SOURCEID = #{csctId}
+                AND IL_SEND_DT IS NULL
+        ) A
+        ORDER BY A.SOURCEDT
+    </select>  
+</mapper>

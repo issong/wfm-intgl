@@ -1,0 +1,29 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.ConversionUtil;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datahandler.domain.WMResourceHolidayInfo;
+import com.kt.oss.wmIntgl.datamapper.domain.intgl.TPRogVo;
+import com._360scheduling.schema.dsmodelling.DsModelling.RAMTimePattern;
+
+// vstype == 14C 이면..
+// id : [workerId] + "_" + [eventDate]매핑 ex) 91002532_20121229
+// base_time : HolidayTcode를 인자로 TB_WM_MAPPINGTPROG 테이블에서 BASE_TIME을 조회하여 eventDate와 조합하여 매핑
+// duration : HolidayTcode를 인자로 TB_WM_MAPPINGTPROG 테이블에서 DURATION을 조회하여 변환 후 매핑
+rule "VS14C_RAMTimePattern"
+	dialect "java"
+	no-loop
+	when
+		order : WMResourceHolidayInfo()
+		tpRogVo : TPRogVo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14C)
+		ramTimePattern : RAMTimePattern()
+	then
+		ramTimePattern.setId(order.getWorkerId() + "_" + order.getEventDate());
+		ramTimePattern.setBaseTime(ConversionUtil.getXMLGregorianCalendar(StringUtil.toDate(order.getEventDate() + tpRogVo.getBaseTime(),"yyyyMMddHH:mm:ss")).toString());
+		ramTimePattern.setDuration(ConversionUtil.getIntToDuration(true, (tpRogVo.getDuration() / 24), (tpRogVo.getDuration() % 24), 0, 0));
+        update(ramTimePattern);
+end

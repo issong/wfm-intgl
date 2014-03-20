@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<properties>
+
+	<comment>Content Default Configuration</comment>
+
+    <!-- JDBC Pool Setting -->
+    <entry key="jdbc.pool.initialSize">1</entry>
+    <entry key="jdbc.pool.maxActive">5</entry>
+    <entry key="jdbc.pool.maxIdle">3</entry>
+    <entry key="jdbc.pool.minIdle">1</entry>
+
+    <entry key="jdbc.pool.360.initialSize">1</entry>
+    <entry key="jdbc.pool.360.maxActive">5</entry>
+    <entry key="jdbc.pool.360.maxIdle">3</entry>
+    <entry key="jdbc.pool.360.minIdle">1</entry>
+    
+    <!-- DB Instance  -->
+    <entry key="db.driver">oracle.jdbc.driver.OracleDriver</entry>
+    <entry key="db.wfm.url">jdbc:oracle:thin:@122.199.145.170:1521:SQISOFT</entry>
+    <entry key="db.wfm.username">sqisoft</entry>
+    <entry key="db.wfm.password">sqisoft</entry>
+
+    <!-- DB Instance  360 -->
+    <entry key="db.360.url">jdbc:oracle:thin:@122.199.145.170:1521:SQISOFT</entry>
+    <entry key="db.360.username">sqisoft</entry>
+    <entry key="db.360.password">sqisoft</entry>
+
+	<!-- STG 
+    <entry key="db.driver">oracle.jdbc.driver.OracleDriver</entry>
+    <entry key="db.wfm.url">jdbc:oracle:thin:@(description=(address_list=(address=(protocol=tcp)(host=10.217.215.44)(port=1521)))(connect_data=(server=dedicated)(service_name=ISI1WMS)(instance_name=ISI1WMS1)))</entry>
+    <entry key="db.wfm.username">intgl</entry>
+    <entry key="db.wfm.password">intgl</entry>
+	-->
+
+    <!-- Olleh Map API Url -->
+    <entry key="ollehmap.url.localsearch">http://14.63.240.31:10080/v2/search/LocalSearch.xml</entry>
+    <entry key="ollehmap.url.coordconv">http://14.63.240.31:10080/v1/search/CoordConv.xml</entry>
+    <entry key="ollehmap.appkey">ZxYya68EVN645D4J</entry>
+    <entry key="ollehmap.testMode">false</entry>
+    <entry key="ollehmap.timeout.connection">20000</entry>
+    <entry key="ollehmap.timeout.socket">30000</entry>
+    <entry key="ollehmap.clienttype">HttpClient_POST</entry>
+    <entry key="ollehmap.loggingEnabled">true</entry>
+    <entry key="ollehmap.loglevel">UpToDongTable</entry>
+    <entry key="ollehmap.writedetail">true</entry>
+
+    <!-- System Type Setting -->
+    <entry key="system.envtype">D</entry>    
+
+    <!-- WebService URL -->
+    <entry key="neoss.url.webservice">http://147.6.48.220/Ws/Wm/BT360Scheduler/BT360Process/Receive360Result.asmx?wsdl</entry>
+    <entry key="scheduler.url.webservice">http://{0}/360WebInterface/services.asmx?wsdl</entry>
+
+    <!-- 360 I/O Server IP -->
+    <entry key="mapping360io.defaultIP">10.217.215.40</entry>
+
+    <!-- Broadcast Parameter URL -->
+    <entry key="broadcastparameter.url">http://10.214.184.235:8080/wfm-intgl/ws/SchedulerWS?wsdl</entry>
+
+    <!-- WMAppointmentServiceProvider DB Polling Interval -->
+    <entry key="appointmentservice.pollinginterval">6</entry>
+    <entry key="appointmentservice.termmillisecond">500</entry>
+
+    <!-- Daily Notification for Sycros -->
+    <entry key="notification.host">10.220.242.106</entry>
+    <entry key="notification.port">8080</entry>    
+    <entry key="notification.instance">wfmSvr42</entry>
+    <entry key="notification.logfilepath">/applog/jboss/wfmSvr42/notification/daybreak.log</entry>
+    <entry key="notification.url">/wfm-intgl/intgl/event/runEventSavedprocess.json</entry>
+    
+    <!-- VS3, VS8, VS10 pending senario -->
+    <entry key="pendingsenario.enabled">false</entry>
+    <entry key="pendingsenario.termmillisecond">2000</entry>
+
+    <!-- VS1 전송시 예약 재전송 senario -->
+    <entry key="appointmentsenario.enabled">true</entry>
+
+    <!-- Drools load setting (true : preload, false : realtime load) -->
+    <entry key="drools.preload.enabled">true</entry>    
+    
+    <!-- Java mail -->
+	<entry key="mail.host">smtp.gmail.com</entry>
+	<entry key="mail.tls_starttls.port">587</entry>
+	<entry key="mail.ssl.port">465</entry>
+	<entry key="mail.userName">jongpilkong1@gmail.com</entry>
+	<entry key="mail.password"></entry>
+	<entry key="mail.from">jongpilkong1@gmail.com</entry>
+	<entry key="mail.to">raking@paran.com</entry>
+
+</properties>

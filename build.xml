@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="wfm-intgl" default="init" basedir="." >
+	<target name="init">
+		<property file="${basedir}/build.properties" />
+		<echo>project name == ${project.name}</echo>
+		<echo>base dir == ${basedir}</echo>
+		<echo>java home == ${java.home}</echo>
+		<echo>deploy path == ${common.deploy.dir}</echo>	
+		<echo>webapps path == ${common.webapps.dir}</echo>
+		<echo>jboss home path == ${jboss.home.dir}</echo>
+		<echo>Revision == ${revision}</echo>
+	</target>
+	
+	
+	<target name="deployDev" depends="init">
+		<property name="deploycmd" value="${common.ant.deploy} -Drevision=${revision} -Denvtype=${envtype} deploy"/>
+		<sshexec host="${dev.host.ip}" username="${dev.user.id}" password="${dev.user.pass}" command="${deploycmd}" trust="true"/>
+	</target>
+	
+	<target name="deployStg" depends="init">
+		<property name="deploycmd" value="${common.ant.deploy} -Drevision=${revision} -Denvtype=${envtype} deploy"/>
+		<sshexec host="${stg.01.host.ip}" username="${stg.user.id}" password="${stg.user.pass}" command="${deploycmd}" trust="true"/>
+		<sshexec host="${stg.02.host.ip}" username="${stg.user.id}" password="${stg.user.pass}" command="${deploycmd}" trust="true"/>
+		<sshexec host="${stg.03.host.ip}" username="${stg.user.id}" password="${stg.user.pass}" command="${deploycmd}" trust="true"/>
+		<sshexec host="${stg.04.host.ip}" username="${stg.user.id}" password="${stg.user.pass}" command="${deploycmd}" trust="true"/>
+	</target>
+	
+	<target name="deployPrd" depends="init">
+		<delete includeEmptyDirs="true">
+		  <fileset dir="${dev.deployprd.dir}" includes="**/*" defaultexcludes="false"/>
+		</delete>
+		<copy todir="${dev.deployprd.dir}" overwrite="true">
+			<fileset dir="${common.war.dir}-${envtype}/target/" includes="*.war"/>
+		</copy>
+		<ftp verbose="yes" server="${prd.01.host.ip}" remotedir="${common.deploy.dir}" userid="${prd.user.id}" password="${prd.user.pass}">
+			<fileset dir="${dev.deployprd.dir}">
+				<include name="*.war"/>
+			</fileset>
+		</ftp>
+		<ftp verbose="yes" server="${prd.02.host.ip}" remotedir="${common.deploy.dir}" userid="${prd.user.id}" password="${prd.user.pass}">
+			<fileset dir="${dev.deployprd.dir}">
+				<include name="*.war"/>
+			</fileset>
+		</ftp>
+		<ftp verbose="yes" server="${prd.03.host.ip}" remotedir="${common.deploy.dir}" userid="${prd.user.id}" password="${prd.user.pass}">
+			<fileset dir="${dev.deployprd.dir}">
+				<include name="*.war"/>
+			</fileset>
+		</ftp>
+		<ftp verbose="yes" server="${prd.04.host.ip}" remotedir="${common.deploy.dir}" userid="${prd.user.id}" password="${prd.user.pass}">
+			<fileset dir="${dev.deployprd.dir}">
+				<include name="*.war"/>
+			</fileset>
+		</ftp>
+	</target>	
+</project>

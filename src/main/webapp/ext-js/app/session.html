@@ -1,0 +1,221 @@
+<script type="text/javascript">
+
+    var sessionTerm = 10;
+    var sessionIntervalRun;
+    var sessionIntervalPressed = false;
+
+    Ext.define('sessionModel', {
+        extend: 'Ext.data.Model',
+        fields: [{
+            name: 'organisationId',
+            type: 'string'
+        }, {
+            name: 'userId',
+            type: 'string'
+        }, {
+            name: 'startDatetime',
+            type: 'string'
+        }, {
+            name: 'endDatetime',
+            type: 'string'
+        }, {
+            name: 'externalTaskId',
+            type: 'string'
+        }, {
+            name: 'lastAccess',
+            type: 'string'
+        }, {
+            name: 'lastOperation',
+            type: 'string'
+        }, {
+            name: 'clientId',
+            type: 'string'
+        }, {
+            name: 'applicationTypeId',
+            type: 'string'
+        }, {
+            name: 'externalDatabaseId',
+            type: 'string'
+        }]
+    });
+  
+    var sessionListStore = Ext.create('Ext.data.Store', {
+        storeId: 'sessionListStore',
+        model: sessionModel,
+        groupField: 'userId',
+        sorters: ['userId'],        
+        proxy: {
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getSessionList.json',
+            reader: {
+                type: 'json',
+                root: 'data'
+            }
+        },        
+        autoLoad: true
+    });    
+
+    Ext.define('Intgl.app.Session', {
+        extend: 'Ext.panel.Panel',
+        alias: 'widget.session',
+
+        initComponent: function() {
+            var me = this;
+
+            var groupingFeature = Ext.create('Ext.grid.feature.Grouping', {
+                    groupHeaderTpl: '{columnName} : {name} ({rows.length} Item{[values.rows.length > 1 ? "s" : ""]})',
+                    hideGroupedHeader: true,
+                    startCollapsed: true,
+                    id: 'restaurantGrouping'
+                }),
+                groups = sessionListStore.getGroups(),
+                len = groups.length, i = 0,
+                toggleMenu = [],
+                toggleGroup = function(item) {
+                    var groupName = item.text;
+                    if (item.checked) {
+                        groupingFeature.expand(groupName, true);
+                    } else {
+                        groupingFeature.collapse(groupName, true);
+                    }
+                };
+
+            // Create checkbox menu items to toggle associated groupd
+            for (; i < len; i++) {
+                toggleMenu[i] = {
+                    xtype: 'menucheckitem',
+                    text: groups[i].name,
+                    handler: toggleGroup
+                }
+            };            
+            
+            var listPanel = Ext.create('Ext.grid.Panel', {
+                title: false,
+                region: 'center',
+                activeItem: 0,
+                split: true,
+                columnLines: true,
+                autoScroll: true,
+                store: sessionListStore,
+                features: [groupingFeature],
+                tbar: [
+                {
+                    xtype : 'button',
+                    text: 'Grouping Enable', 
+                    itemId: 'grpBtn',
+                    enableToggle: true, 
+                    pressed: true,
+                    listeners: {
+                        toggle: function( thisObj, pressed, eOpts ) {
+                            if(pressed) {
+                                //console.log(me.down("#rgGrp").getValue().rb);
+                                Ext.StoreMgr.get('sessionListStore').group(me.down("#rgGrp").getValue().rb);
+                                groupingFeature.enable();
+                            }else{
+                                groupingFeature.disable();
+                            }
+                        }
+                    }
+                },
+                {
+                    xtype      : 'radiogroup',
+                    itemId     : 'rgGrp',
+                    fieldLabel : '',
+                    defaults: {
+                        width: 150,
+                    },
+                    layout: 'hbox',
+                    items: [
+                        { boxLabel: 'USER ID', name: 'rb', inputValue: 'userId', checked: true },
+                        { boxLabel: 'CLIENT ID', name: 'rb', inputValue: 'clientId'},
+                        { boxLabel: 'EXTERNAL TASK ID', name: 'rb', inputValue: 'externalTaskId'}
+                    ],
+                    listeners: {
+                        change : function(thisFormField, newValue, oldValue, eOpts) {
+                            if(!me.down('#grpBtn').pressed) return;
+                            Ext.StoreMgr.get('sessionListStore').group(newValue.rb);
+                        }                        
+                    }
+
+                }],             
+                columns: [
+                    {text: 'USER ID', dataIndex: 'userId', width: 120, align: 'center'},
+                    {text: 'START DATETIME', dataIndex: 'startDatetime', width: 140, align: 'center' },
+                    {text: 'END DATETIME', dataIndex: 'endDatetime', width: 140, align: 'center' },
+                    {text: 'EXTERNAL TASK ID', dataIndex: 'externalTaskId', width: 110, align: 'center' },
+                    {text: 'LAST ACCESS', dataIndex: 'lastAccess', width: 140, align: 'center' },
+                    {text: 'LAST OPERATION', dataIndex: 'lastOperation', width: 180, align: 'left'},
+                    {text: 'CLIENT ID', dataIndex: 'clientId', width: 120, align: 'center'},
+                    {text: 'CLIENT DATA', dataIndex: 'clientData', width: 120, align: 'center'},
+                    {text: 'APPLICATION TYPE ID', dataIndex: 'applicationTypeId', width: 120, align: 'center'},
+                    {text: 'EXTERNAL DATABASE ID', dataIndex: 'externalDatabaseId', width: 130, align: 'center'}
+                ],
+                height: '100%',
+                width: '100%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        Ext.create('Ext.Action',{
+                            text: 'Refresh',
+                            handler: function() {
+                                me.reload();
+                            },
+                            iconCls: 'refreshButton'
+                        }),
+                        {
+                            xtype: 'label',
+                            text: 'USER ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'searchUserId',
+                            enableKeyEvents: true,
+                            width: 150,
+                            listeners: {
+                                keydown: function( thisObj, e, eOpts ) {
+                                    if(e.keyCode == 13) {
+                                        me.reload();
+                                    }
+                                }
+                            }
+                        },
+                        { xtype: 'tbspacer', width: 20 },
+                        {
+                            xtype: 'checkboxfield',
+                            boxLabel  : '로그인한 사용자만 조회',
+                            itemId: 'onlyLoggedUser',
+                            width: 150,
+                            listeners: {
+                                change: function( thisObj, newValue, oldValue, eOpts ) {
+                                    me.reload();
+                                }
+                            }                            
+                        }
+                    ]
+                },
+                listeners: {
+                }
+            });
+
+            Ext.apply(me, {
+                layout: 'border',
+                items: [
+                    listPanel
+                ],
+            });
+            me.callParent(arguments);
+        },
+        reload: function() {
+            sessionListStore.reload({params: {
+                searchUserId: this.down("#searchUserId").getValue(),
+                onlyLoggedUser: this.down("#onlyLoggedUser").getValue()
+                }
+            });            
+        }     
+
+    });
+
+    Ext.getCmp("app-main").getActiveTab().add(Ext.create('widget.session'));
+
+</script>

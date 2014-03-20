@@ -1,0 +1,690 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.eventhandler.dao.intgl.EventLogServiceDao" >
+
+  <!-- 
+    - 이벤트 로그를 위한 키를 가져옵니다.
+    -->
+	<select id="getEventId" resultType="long">
+		SELECT SQ_EVENT_ID.NEXTVAL AS eventId FROM DUAL
+	</select>
+
+  <!-- 
+    - 이벤트 로그 테이블에 로그이력을 추가합니다.
+    -->
+  <insert id="writeEventLog" parameterType="EventLogVo">
+		INSERT INTO TB_WM_EVENTLOG (
+				EVENT_ID         
+				, EVENT_SENDER   
+				, EVENT_RECEIVER 
+				, EVENT_VSTYPE   
+				, EVENT_SOURCEID 
+				, EVENT_TYPE     
+				, EVENT_CLASS    
+				, EVENT_METHOD   
+				, EVENT_STATUS   
+				, EVENT_ROUTE    
+				, EVENT_MSG   
+				, EVENT_IP
+				, EVENT_HOST_NAME
+				, EVENT_HOST_IP   	
+				, EVENT_DATA_SIZE			
+		)
+		VALUES  (
+		    #{eventId}
+			, #{eventSender, jdbcType=VARCHAR}
+			, #{eventReceiver, jdbcType=VARCHAR}
+			, #{eventVsType, jdbcType=VARCHAR}
+			, #{eventSourceId, jdbcType=VARCHAR}
+			, #{eventType, jdbcType=INTEGER}
+			, #{eventClass, jdbcType=VARCHAR}
+			, #{eventMethod, jdbcType=VARCHAR}
+			, #{eventStatusType, jdbcType=INTEGER}
+	        , #{eventRoute, jdbcType=VARCHAR}
+			, #{eventMsg, jdbcType=VARCHAR}
+			, #{eventIp, jdbcType=VARCHAR}
+			, #{eventHostName, jdbcType=VARCHAR}
+			, #{eventHostIp, jdbcType=VARCHAR}	  
+			, #{eventDataSize, jdbcType=INTEGER}      
+	    )
+  </insert>
+  
+  <!-- 
+    - 이벤트 로그 테이블에 로그이력을 update 합니다.
+    -->
+  <update id="updateEventLog" parameterType="EventLogVo">
+		UPDATE TB_WM_EVENTLOG
+		SET EVENT_STATUS = #{eventStatusType}
+		, EVENT_MSG = EVENT_MSG ||CHR(10)||CHR(10)|| #{eventMsg}
+		WHERE EVENT_ID = #{eventId}
+		AND EVENT_TYPE = #{eventType}
+  </update>  
+
+  <!-- 
+    - 이벤트 로그 디테일 테이블에 로그상세이력을 추가합니다.
+    - 단독으로 사용할 수 없고, 이벤트 로그와 같이 추가해야 합니다.
+    -->
+  <insert id="writeEventDetailLog" parameterType="EventLogVo"> 
+		INSERT INTO TB_WM_EVENTLOGDETAIL (
+				EVENT_ID     
+				, EVENT_VSTYPE   
+				, EVENT_TYPE  				    
+				, MSG )
+		VALUES (
+			#{eventId}
+			, #{eventVsType, jdbcType=VARCHAR}
+			, #{eventType, jdbcType=INTEGER}			
+			, #{eventDetailMsg, jdbcType=CLOB}
+		)
+  </insert>
+  
+  <!-- 
+    - 올레맵 로그를 위한 키를 가져옵니다.
+    -->
+	<select id="getOllehMapEventId" resultType="long">
+		SELECT SQ_MAP_ID.NEXTVAL AS eventId FROM DUAL
+	</select>
+  
+  <!-- 
+    - 올레맵 로그 테이블에 조회시작 이력을 추가합니다.
+    -->    
+  <insert id="writeOllehMapLog" parameterType="OllehMapLogVo" useGeneratedKeys="true"> 
+  	<selectKey keyProperty="seq" resultType="int" order="BEFORE">
+  		SELECT SQ_MAP_ID.NEXTVAL AS seq FROM DUAL
+  	</selectKey>  
+  		BEGIN
+			INSERT INTO TB_WM_OLLEHMAPLOG (
+					SEQ
+					, EVENT_ID
+					, EVENT_CSCT_CD
+					, EVENT_OFFICE_CD
+					, EVENT_ADDR
+					, EVENT_HOST_IP
+					, EVENT_START_DT
+					, EVENT_LATITUDE
+					, EVENT_LONGITUDE
+					, EVENT_RESULT
+					, EVENT_RESULT_SOURCE
+					, EVENT_MSG
+					, EVENT_END_DT
+					)
+			VALUES (
+			    #{seq}
+			    , #{eventId}
+			    , #{eventCsctCd}
+			    , #{eventOfficeCd}
+				, #{eventAddr}
+				, #{eventHostIp}
+				, #{eventStartDt, jdbcType=TIMESTAMP}
+				, ${eventLatitude}
+				, ${eventLongitude}
+				, #{eventResult, jdbcType=VARCHAR}
+				, #{eventResultSource, jdbcType=VARCHAR}
+				, #{eventMsg, jdbcType=VARCHAR}
+				, #{eventEndDt, jdbcType=TIMESTAMP}
+			);
+			<if test="writeDetail == true">
+			INSERT INTO TB_WM_OLLEHMAPLOG_DETAIL(
+				SEQ
+				, MSG
+				) 
+			VALUES(
+				#{seq}
+				, #{eventDetailMsg, jdbcType=CLOB}
+				);		
+			</if>
+		END;
+  </insert> 
+  
+  <!-- 
+    - 올레맵 로그 테이블에 조회끝 이력을 갱신합니다.
+    - 2013-01-07 : not used 
+    -->    
+  <insert id="updateOllehMapLog" parameterType="OllehMapLogVo"> 
+			UPDATE TB_WM_OLLEHMAPLOG 
+				SET
+				    EVENT_LATITUDE = ${eventLatitude}
+					, EVENT_LONGITUDE = ${eventLongitude}
+					, EVENT_RESULT =  #{eventResult, jdbcType=VARCHAR}
+					, EVENT_RESULT_SOURCE = #{eventResultSource, jdbcType=VARCHAR}
+					, EVENT_MSG = #{eventMsg, jdbcType=VARCHAR}
+					, EVENT_END_DT = SYSTIMESTAMP(6)
+			WHERE
+				SEQ = #{seq}
+  </insert>     
+
+
+	<!-- 
+		- 이벤트 로그 테이블에서 로그일자를 조회합니다.
+		-->    
+	<select id="getEventLogDate" parameterType="EventLogVo" resultType="EventLogVo">
+		SELECT DISTINCT TO_CHAR(EVENT_DT, 'YYYY-MM-DD') as eventDtStr
+		FROM TB_WM_EVENTLOG
+		ORDER BY eventDtStr DESC
+	</select> 
+
+	<!-- 
+		- 이벤트 로그 테이블에서 로그목록을 조회합니다.
+		-->    
+	<select id="getEventLogList" parameterType="EventLogVo" resultType="EventLogVo"> 
+		SELECT *
+		FROM (
+			SELECT
+				L.EVENT_ID as eventId,
+				L.EVENT_SENDER as eventSender,
+				L.EVENT_RECEIVER as eventReceiver,
+				L.EVENT_VSTYPE as eventVsTypeStr,
+				L.EVENT_SOURCEID as eventSourceId,
+				L.EVENT_TYPE as eventTypeStr,
+				L.EVENT_CLASS as eventClass,
+				L.EVENT_METHOD as eventMethod,
+				L.EVENT_STATUS as eventStatusStr,
+				L.EVENT_ROUTE as eventRoute,
+				L.EVENT_MSG as eventMsg,
+				TO_CHAR(L.EVENT_DT, 'YYYY-MM-DD HH24:MI:SS:FF3') as eventDtStr,
+				L.EVENT_IP as eventIp,
+				L.EVENT_HOST_IP as eventHostIp,
+				L.EVENT_HOST_NAME as eventHostName,
+				L.EVENT_DATA_SIZE as eventDataSize,
+				CEIL((ROW_NUMBER() OVER(ORDER BY  L.EVENT_ID DESC, L.EVENT_TYPE DESC))/#{searchLimit}) as pageNum,
+				CEIL(COUNT(1) OVER()) as totalPage
+			FROM TB_WM_EVENTLOG L, 
+				 TB_WM_EVENTLOGDETAIL D
+			WHERE L.EVENT_ID = D.EVENT_ID(+)
+			AND L.EVENT_VSTYPE = D.EVENT_VSTYPE(+)
+			AND L.EVENT_TYPE = D.EVENT_TYPE(+)
+			<if test="@org.springframework.util.StringUtils@hasLength(searchFromDt)">
+				AND L.EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(searchToDt)">
+		    	AND L.EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventIdStr)">
+		    	AND L.EVENT_ID = #{eventIdStr}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventSourceId)">
+		    	AND L.EVENT_SOURCEID = #{eventSourceId}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventVsTypeStr)">
+		    	AND L.EVENT_VSTYPE = #{eventVsTypeStr}
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventTypeStr)">
+		    	AND L.EVENT_TYPE = #{eventTypeStr}
+			</if>
+			<if test='eventStatusStr == "S"'>
+		    	AND L.EVENT_ID IN (
+		    		SELECT DISTINCT EVENT_ID 
+		    		FROM TB_WM_EVENTLOG 
+		    		WHERE EVENT_STATUS IN (0, 7)
+					<if test="@org.springframework.util.StringUtils@hasLength(searchFromDt)">
+						AND EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+					</if>
+					<if test="@org.springframework.util.StringUtils@hasLength(searchToDt)">
+				    	AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+					</if>
+		    	)
+			</if>
+			<if test='eventStatusStr == "F"'>
+		    	AND L.EVENT_ID IN (
+		    		SELECT DISTINCT EVENT_ID 
+		    		FROM TB_WM_EVENTLOG 
+		    		WHERE EVENT_STATUS NOT IN (0, 7)
+					<if test="@org.springframework.util.StringUtils@hasLength(searchFromDt)">
+						AND EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+					</if>
+					<if test="@org.springframework.util.StringUtils@hasLength(searchToDt)">
+				    	AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+					</if>
+		    	)
+			</if>
+			<if test="@org.springframework.util.StringUtils@hasLength(eventMsg)">
+		    	AND D.MSG LIKE '%'|| #{eventMsg} ||'%'
+			</if>
+		) K
+		WHERE K.pageNum = #{searchPage}
+	</select>
+
+	<!-- 
+		- 이벤트 로그상세 테이블에서 로그상세 내용을 조회합니다.
+		-->    
+	<select id="getEventLogDetail" parameterType="EventLogVo" resultType="EventLogVo">
+		SELECT
+			D.MSG as eventDetailMsg
+		FROM TB_WM_EVENTLOGDETAIL D
+		WHERE D.EVENT_ID = #{eventId}
+		AND D.EVENT_TYPE = #{eventType}
+	</select>
+
+	<!-- 
+		- 이벤트 현황을 조회합니다.
+		-->    
+	<select id="getEventStatusList" parameterType="EventStatusVo" resultType="EventStatusVo" flushCache="true" useCache="false"> 
+		select
+			k.*
+		from (
+			select
+			       case
+			         when b.curvstype = 'VS6' then
+			           case b.curtype 
+			             when 7 then case when a.event_status = 0 or a.event_status = 7 then 'S' else 'F' end
+			             else        case when a.event_status = 0 then 'I' else 'F' end
+			           end
+			         when b.curvstype = 'VS6A' then case when a.event_status = 0 or a.event_status = 7 then 'S' else 'F' end
+	                 when b.curvstype = 'VS2' or b.curvstype = 'VS7' then
+	                   case b.event_data_size
+	                     when 0 then case when a.event_status = 0 or a.event_status = 7 then 'S' else 'F' end
+	                     else
+				           case b.curtype
+				             when 6 then case when a.event_status = 0 or a.event_status = 7 then 'S' else 'F' end
+				             else        case when a.event_status = 0 then 'I' else 'F' end
+				           end
+	                   end
+			         else
+			           case b.curtype
+			             when 6 then case when a.event_status = 0 or a.event_status = 7 then 'S' else 'F' end
+			             else        case when a.event_status = 0 then 'I' else 'F' end
+			           end
+			       end as eventStatusCode,
+			       to_char(b.startdt, 'YYYY-MM-DD HH24:MI:SS:FF3') as eventStartDt 
+			     , to_char(a.event_dt, 'YYYY-MM-DD HH24:MI:SS:FF3') as eventLastDt
+			     , a.event_sourceid as eventSourceId
+			     , a.event_vstype as eventVsTypeStr
+			     , b.curtype as eventTypeStr
+			     , b.event_data_size as eventDataSize
+	             , case
+	                 when b.curvstype = 'VS6' then
+	                     case b.curtype
+	                       when 7 then to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+	                       else
+	                         case a.event_status
+	                           when 0 then to_char(systimestamp - b.startdt)
+	                           else to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+	                         end
+	                     end
+	                 when b.curvstype = 'VS6A' then to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+	                 when b.curvstype = 'VS2' or b.curvstype = 'VS7' then
+	                     case b.event_data_size
+	                       when 0 then to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+	                       else
+		                     case b.curtype
+		                       when 6 then to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+		                       else
+		                         case a.event_status
+		                           when 0 then to_char(systimestamp - b.startdt)
+		                           else to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+		                         end
+		                     end
+	                     end
+	                 else
+	                     case b.curtype
+	                       when 6 then to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+	                       else
+	                         case a.event_status
+	                           when 0 then to_char(systimestamp - b.startdt)
+	                           else to_char(nvl(a.event_dt,systimestamp) - b.startdt)
+	                         end
+	                     end
+	               end as intervalDt
+	             , a.event_status as eventStatusStr
+			     , a.event_msg as eventMsg
+			     , b.curroute as eventRoute
+			     , a.event_host_ip as eventHostIp
+			     , a.event_host_name as eventHostName
+			     , b.event_ip as eventIp
+			     , a.event_id as eventId
+	             , case
+	                 when b.curvstype = 'VS1' then
+	                 	nvl((select '['||event_status||'] SIZE('||event_data_size||')' from tb_wm_eventlog where event_id = a.event_id and event_type = 0),'')
+	                 else ''
+	               end as reserveStatus
+				<if test="@org.springframework.util.StringUtils@hasLength(searchPage)">
+				 , ceil((row_number() over(order by b.startdt desc))/#{searchLimit}) as pageNum
+				 , ceil(count(1) over()) as totalPage
+				</if>
+			  from tb_wm_eventlog a,
+			       (select a.event_ip, a.event_id, a.event_dt as startdt, a.event_data_size, b.event_vstype as curvstype, b.event_type as curtype, a.event_status as curstatus, a.event_msg as msg, b.event_route as curroute
+			          from (select * from tb_wm_eventlog 
+			          		 where event_type=1 
+				 <if test="@org.springframework.util.StringUtils@hasLength(searchTerm)">
+					           and event_dt &gt;= sysdate-(#{searchTerm}/(24*60)) 
+				 </if>
+				 <if test="@org.springframework.util.StringUtils@hasLength(eventStartDt) and @org.springframework.util.StringUtils@hasLength(eventLastDt)">
+					           and event_dt &gt;= to_date(#{eventStartDt}, 'YYYY-MM-DD HH24:MI:SS') 
+					           and event_dt &lt;= to_date(#{eventLastDt}, 'YYYY-MM-DD HH24:MI:SS')
+				 </if>
+					         order by event_dt desc) a,
+			               (select event_id, event_vstype, max(event_type) as event_type, max(event_route) as event_route from tb_wm_eventlog 
+				 <if test="@org.springframework.util.StringUtils@hasLength(searchTerm)">
+			                 where event_dt &gt;= sysdate-(#{searchTerm}/(24*60)) 
+				 </if>
+				 <if test="@org.springframework.util.StringUtils@hasLength(eventStartDt) and @org.springframework.util.StringUtils@hasLength(eventLastDt)">
+					         where event_dt &gt;= to_date(#{eventStartDt}, 'YYYY-MM-DD HH24:MI:SS') 
+					           and event_dt &lt;= to_date(#{eventLastDt}, 'YYYY-MM-DD HH24:MI:SS')
+				 </if>
+			                 group by event_id, event_vstype) b
+			         where a.event_id = b.event_id 
+			         order by a.event_dt desc
+			       ) b
+			 where a.event_id   = b.event_id
+			   and a.event_type = b.curtype
+			 <if test='eventStatusCode == "S"'>and a.event_status in (0, 7)</if>
+			 <if test='eventStatusCode == "F"'>and a.event_status not in (0, 7)</if>
+			 <if test="@org.springframework.util.StringUtils@hasLength(eventSourceId)">
+			   	and a.event_sourceid = #{eventSourceId}
+			 </if>
+			 <if test="@org.springframework.util.StringUtils@hasLength(eventVsTypeStr)">
+			   	and a.event_vstype = #{eventVsTypeStr}
+			 </if>
+		) k
+		<trim prefix="where" prefixOverrides="and ">
+			<if test="@org.springframework.util.StringUtils@hasLength(searchPage)">
+			  and k.pageNum = #{searchPage}
+			</if>
+			<if test='eventStatusCode == "P"'>
+			  and k.eventStatusCode = 'I'
+			</if>
+			<if test='eventStatusCode == "B"'>
+			  and k.eventRoute = nvl((select threesixtyioserver_ip from tb_wm_mapping360io where csct_cd = '000000'),'')
+			</if>
+			<if test='eventStatusCode == "R"'>
+			  and exists (select event_id from tb_wm_eventreprocess where event_id = k.eventId)
+			</if>
+		</trim>
+	</select>
+	<!-- 
+		               (select a.event_id, (a.successcnt + b.failcnt) as totalcnt, a.successcnt, b.failcnt 
+		                  from (select event_id, count(1) as successcnt from tb_wm_ollehmaplog where event_start_dt >= sysdate-(#{searchTerm}/(24*60)) and event_result= 'true' group by event_id) a,
+		                       (select event_id, count(1) as failcnt from tb_wm_ollehmaplog where event_start_dt >= sysdate-(#{searchTerm}/(24*60)) and event_result= 'false' group by event_id) b
+		                 where a.event_id = b.event_id) c
+	 -->
+
+	<!-- 
+		- 올레맵 로그 테이블에서 로그목록을 조회합니다.
+		-->    
+	<select id="getOllehMapLogList" parameterType="OllehMapLogVo" resultType="OllehMapLogVo"> 
+		SELECT *
+		FROM (
+			SELECT 
+			    L.SEQ as seq,
+			    L.EVENT_ID as eventId,
+			    L.EVENT_CSCT_CD as eventCsctCd,
+			    L.EVENT_OFFICE_CD as eventOfficeCd,
+			    L.EVENT_ADDR as eventAddr,
+			    L.EVENT_LATITUDE as eventLatitude,
+			    L.EVENT_LONGITUDE as eventLongitude,
+			    L.EVENT_RESULT as eventResult,
+			    L.EVENT_RESULT_SOURCE as eventResultSource,
+			    L.EVENT_MSG as eventMsg,
+				TO_CHAR(L.EVENT_START_DT, 'YYYY-MM-DD HH24:MI:SS:FF3') as eventStartDtStr,
+				TO_CHAR(L.EVENT_END_DT, 'YYYY-MM-DD HH24:MI:SS:FF3') as eventEndDtStr,
+			    L.EVENT_HOST_IP as eventHostIp,
+			    CEIL((ROW_NUMBER() OVER(ORDER BY  L.SEQ DESC))/#{searchLimit}) as pageNum,
+			    CEIL(COUNT(*) OVER()) as totalPage
+			FROM TB_WM_OLLEHMAPLOG L
+			<trim prefix="WHERE" prefixOverrides="AND ">
+				<if test="@org.springframework.util.StringUtils@hasLength(searchFromDt)">
+					AND L.EVENT_START_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+				</if>
+				<if test="@org.springframework.util.StringUtils@hasLength(searchToDt)">
+			    	AND L.EVENT_START_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+				</if>
+				<if test="@org.springframework.util.StringUtils@hasLength(eventIdStr)">
+			    	AND L.EVENT_ID = #{eventIdStr}
+				</if>
+				<if test="@org.springframework.util.StringUtils@hasLength(eventCsctCd)">
+			    	AND L.EVENT_CSCT_CD = #{eventCsctCd}
+				</if>
+				<if test="@org.springframework.util.StringUtils@hasLength(eventOfficeCd)">
+			    	AND L.EVENT_OFFICE_CD = #{eventOfficeCd}
+				</if>
+				<if test="@org.springframework.util.StringUtils@hasLength(eventAddr)">
+			    	AND L.EVENT_ADDR LIKE '%'|| #{eventAddr} ||'%'
+				</if>
+			</trim>
+		) K
+		WHERE K.pageNum = #{searchPage}
+	</select>
+
+	<!-- 
+		- 올레맵 로그상세 테이블에서 로그상세 내용을 조회합니다.
+		-->    
+	<select id="getOllehMapLogDetail" parameterType="OllehMapLogVo" resultType="OllehMapLogVo">
+		SELECT
+			D.MSG as eventDetailMsg
+		FROM TB_WM_OLLEHMAPLOG_DETAIL D
+		WHERE D.SEQ = #{seq}
+	</select>
+
+	<!-- 
+		- IL CSCT별 현황판 Summary 데이터를 조회합니다
+		-->    
+	<select id="getEventBoardSumList" parameterType="EventBoardVo" resultType="EventBoardVo"> 
+        SELECT
+            O.ORG_NM||'('||O.ORG_CD||') ['||NVL((SELECT DISPATCH_YN FROM TB_WM_MAPPING360IO WHERE CSCT_CD = O.ORG_CD), '-')||']' as csctNm,
+            NVL(SUM(K.VS1_DATA_SIZE), 0) as vs1DataSize,
+            NVL(SUM(K.VS14B_DATA_SIZE), 0) as vs14bDataSize,
+            NVL(SUM(K.VS14C_DATA_SIZE), 0) as vs14cDataSize,
+            O.ORG_CD as csctId
+        FROM (
+             SELECT
+                 M.EVENT_SOURCEID,
+                 MAX(M.EVENT_ID) AS EVENT_ID,
+                 CASE WHEN M.EVENT_VSTYPE = 'VS1' THEN SUM(M.EVENT_DATA_SIZE) ELSE 0 END AS VS1_DATA_SIZE,
+                 CASE WHEN M.EVENT_VSTYPE = 'VS14B' THEN SUM(M.EVENT_DATA_SIZE) ELSE 0 END AS VS14B_DATA_SIZE,
+                 CASE WHEN M.EVENT_VSTYPE = 'VS14C' THEN SUM(M.EVENT_DATA_SIZE) ELSE 0 END AS VS14C_DATA_SIZE
+             FROM (
+                 SELECT EVENT_SOURCEID, EVENT_VSTYPE, MAX(EVENT_ID) AS EVENT_ID
+                 FROM TB_WM_EVENTLOG
+                 WHERE EVENT_VSTYPE IN ('VS1', 'VS14B', 'VS14C')
+				 AND EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS')
+		    	 AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+                 AND EVENT_TYPE = 6
+                 AND EVENT_STATUS IN (0, 7)
+                 GROUP BY EVENT_SOURCEID, EVENT_VSTYPE
+                 ORDER BY EVENT_SOURCEID, EVENT_VSTYPE) L,
+                 TB_WM_EVENTLOG M
+             WHERE L.EVENT_SOURCEID = M.EVENT_SOURCEID
+             AND L.EVENT_VSTYPE = M.EVENT_VSTYPE
+             AND L.EVENT_ID = M.EVENT_ID
+             AND M.EVENT_TYPE = 1
+             GROUP BY M.EVENT_SOURCEID, M.EVENT_VSTYPE) K,
+            (SELECT
+                F.PARENT_CD, F.ORG_CD, F.ORG_NM
+             FROM TB_WM_MAPPING360IO I,
+                  TB_WM_MAPPINGOFFICE F
+             WHERE I.USE_YN = 'Y'
+             AND I.CSCT_CD = F.ORG_CD) O
+        WHERE O.ORG_CD = K.EVENT_SOURCEID(+)
+        GROUP BY O.PARENT_CD, O.ORG_CD, O.ORG_NM
+        ORDER BY O.PARENT_CD, O.ORG_CD
+	</select>
+
+	<!-- 
+		- IL VS별 현황판 Count 데이터를 조회합니다
+		    SUM(K.FAIL_COUNT) as failCount,
+		-->    
+	<select id="getEventBoardCountList" parameterType="EventBoardVo" resultType="EventBoardVo"> 
+		SELECT
+		    K.CUR_EVENT_VSTYPE as vsType,
+		    (SUM(K.SUCC_COUNT) + SUM(K.FAIL_COUNT) + SUM(K.PROC_COUNT)) as totalCount,
+		    SUM(K.SUCC_COUNT) as succCount,
+            CASE WHEN MAX(K.EVENT_DT) &gt;= (SYSDATE-(1/(24*60))) and SUM(K.FAIL_COUNT) &gt; 0 THEN '(red)'||SUM(K.FAIL_COUNT) ELSE TO_CHAR(SUM(K.FAIL_COUNT)) END as failCount,
+		    SUM(K.PROC_COUNT) as procCount,
+		    SUM(K.STANDBY_COUNT) as standbyCount,
+            SUM(K.REPROCESS_COUNT) as reprocessCount,
+            MAX(CASE WHEN CUR_EVENT_VSTYPE = 'VS3' THEN 
+                      (SELECT COUNT(1) 
+                       FROM TB_WM_R_WORKORDERSTATUS 
+                       WHERE IL_SEND_DT IS NULL 
+                       AND IL_RECV_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+                       AND IL_RECV_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+						<if test="@org.springframework.util.StringUtils@hasLength(csctId)">
+	                       AND SOURCEID = #{csctId}
+						</if>)
+                 WHEN CUR_EVENT_VSTYPE = 'VS8' THEN
+                      (SELECT COUNT(1) 
+                       FROM TB_WM_R_WORKORDERKEY 
+                       WHERE IL_SEND_DT IS NULL 
+                       AND IL_RECV_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+                       AND IL_RECV_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+						<if test="@org.springframework.util.StringUtils@hasLength(csctId)">
+	                       AND SOURCEID = #{csctId}
+						</if>)
+                 WHEN CUR_EVENT_VSTYPE = 'VS5' THEN
+                      (SELECT COUNT(1) 
+                       FROM TB_WM_R_WORKORDER 
+                       WHERE IL_SEND_DT IS NULL 
+                       AND IL_RECV_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+                       AND IL_RECV_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+                       AND VSTYPE = 'VS5'
+						<if test="@org.springframework.util.StringUtils@hasLength(csctId)">
+	                       AND SOURCEID = #{csctId}
+						</if>)
+                 WHEN CUR_EVENT_VSTYPE = 'VS10' THEN
+                      (SELECT COUNT(1) 
+                       FROM TB_WM_R_WORKORDER 
+                       WHERE IL_SEND_DT IS NULL 
+                       AND IL_RECV_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+                       AND IL_RECV_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+                       AND VSTYPE = 'VS10'
+						<if test="@org.springframework.util.StringUtils@hasLength(csctId)">
+	                       AND SOURCEID = #{csctId}
+						</if>)
+                 ELSE 0 END) AS savedCount,
+		    DECODE(MAX(K.EVENT_DT),NULL,NULL,TO_CHAR(MAX(K.EVENT_DT),'YYYY-MM-DD HH24:MI:SS:FF3')) as eventDt
+		FROM (
+		    SELECT
+		        T.CUR_EVENT_VSTYPE,
+		        CASE WHEN T.EVENT_STATUS_CODE = 'S' THEN 1 ELSE 0 END AS SUCC_COUNT,
+		        CASE WHEN T.EVENT_STATUS_CODE = 'I' THEN 1 ELSE 0 END AS PROC_COUNT,
+		        CASE WHEN T.EVENT_STATUS_CODE = 'F' THEN 1 ELSE 0 END AS FAIL_COUNT,
+		        T.STANDBY_COUNT,
+                T.REPROCESS_COUNT,
+		        T.EVENT_DT
+		    FROM (
+		        SELECT
+		            M.EVENT_ID AS CUR_EVENT_ID,
+		            M.EVENT_VSTYPE AS CUR_EVENT_VSTYPE,
+		            M.EVENT_TYPE AS CUR_EVENT_TYPE,
+		            CASE
+		              WHEN M.EVENT_VSTYPE = 'VS6' THEN
+		                CASE M.EVENT_TYPE 
+		                  WHEN 7 THEN CASE WHEN M.EVENT_STATUS = 0 OR M.EVENT_STATUS = 7 THEN 'S' ELSE 'F' END
+		                  ELSE        CASE WHEN M.EVENT_STATUS = 0 THEN 'I' ELSE 'F' END
+		                END
+		              WHEN M.EVENT_VSTYPE = 'VS6A' THEN CASE WHEN M.EVENT_STATUS = 0 OR M.EVENT_STATUS = 7 THEN 'S' ELSE 'F' END
+		              WHEN M.EVENT_VSTYPE = 'VS2' OR M.EVENT_VSTYPE = 'VS7' THEN
+		                CASE N.EVENT_DATA_SIZE
+		                  WHEN 0 THEN CASE WHEN M.EVENT_STATUS = 0 OR M.EVENT_STATUS = 7 THEN 'S' ELSE 'F' END
+		                  ELSE
+		                    CASE M.EVENT_TYPE
+		                      WHEN 6 THEN CASE WHEN M.EVENT_STATUS = 0 OR M.EVENT_STATUS = 7 THEN 'S' ELSE 'F' END
+		                      ELSE        CASE WHEN M.EVENT_STATUS = 0 THEN 'I' ELSE 'F' END
+		                    END
+		                END
+		              ELSE
+		                CASE M.EVENT_TYPE
+		                  WHEN 6 THEN CASE WHEN M.EVENT_STATUS = 0 OR M.EVENT_STATUS = 7 THEN 'S' ELSE 'F' END
+		                  ELSE        CASE WHEN M.EVENT_STATUS = 0 THEN 'I' ELSE 'F' END
+		                END
+		            END AS EVENT_STATUS_CODE,
+		            M.STANDBY_COUNT,
+                    M.REPROCESS_COUNT,
+		            N.*
+		        FROM (
+		            SELECT 
+		                EVENT_ID, EVENT_VSTYPE, 
+		                MAX(EVENT_TYPE) AS EVENT_TYPE,
+		                MAX(EVENT_STATUS) AS EVENT_STATUS,
+		                CASE WHEN MAX(EVENT_ROUTE) = (SELECT THREESIXTYIOSERVER_IP FROM TB_WM_MAPPING360IO WHERE CSCT_CD = '000000') THEN 1 ELSE 0 END AS STANDBY_COUNT,
+                        (SELECT COUNT(1) FROM TB_WM_EVENTREPROCESS WHERE EVENT_ID = TB_WM_EVENTLOG.EVENT_ID) REPROCESS_COUNT
+		            FROM TB_WM_EVENTLOG 
+					WHERE EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+			    	AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+					<if test="@org.springframework.util.StringUtils@hasLength(csctId)">
+						AND EVENT_SOURCEID = #{csctId}
+					</if>
+		            GROUP BY EVENT_ID, EVENT_VSTYPE) M,
+		            (SELECT * 
+		            FROM TB_WM_EVENTLOG 
+		            WHERE EVENT_TYPE = 1 
+					AND EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+			    	AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+					<if test="@org.springframework.util.StringUtils@hasLength(csctId)">
+						AND EVENT_SOURCEID = #{csctId}
+					</if>
+		            ) N
+		        WHERE M.EVENT_ID = N.EVENT_ID) T) K
+		GROUP BY K.CUR_EVENT_VSTYPE
+		ORDER BY K.CUR_EVENT_VSTYPE
+	</select>
+
+	<!-- 
+		- CSCT 목록을 조회합니다
+		-->    
+	<select id="getCsctList" parameterType="EventBoardVo" resultType="EventBoardVo"> 
+        SELECT
+            K.ORG_CD as csctId,
+            K.ORG_NM as csctNm
+        FROM (
+            SELECT
+                '00' as PARENT_CD,
+                'A' as ORG_CD,
+                '전체' as ORG_NM
+            FROM DUAL
+            UNION
+            SELECT
+                F.PARENT_CD,
+                F.ORG_CD,
+                F.ORG_NM||'('||F.ORG_CD||')' as ORG_NM
+            FROM TB_WM_MAPPING360IO I,
+                 TB_WM_MAPPINGOFFICE F
+            WHERE I.USE_YN = 'Y'
+            AND I.CSCT_CD = F.ORG_CD) K
+        ORDER BY K.PARENT_CD, K.ORG_CD
+	</select>
+
+	<select id="getCsctBatchStatus" parameterType="EventLogVo" resultType="EventLogVo">
+		SELECT
+		    I.CSCT_CD as eventSourceId,
+		    K.EVENT_VSTYPE as eventVsType,
+		    K.EVENT_STATUS_CODE as eventStatusStr
+		FROM (
+		    SELECT
+		        M.EVENT_SOURCEID, M.EVENT_VSTYPE, M.EVENT_ID,
+		        CASE M.EVENT_TYPE
+		          WHEN 6 THEN CASE WHEN M.EVENT_STATUS = 0 OR M.EVENT_STATUS = 7 THEN 'S' ELSE 'F' END
+		          ELSE        CASE WHEN M.EVENT_STATUS = 0 THEN 'I' ELSE 'F' END
+		        END AS EVENT_STATUS_CODE
+		    FROM TB_WM_EVENTLOG M,
+		        (SELECT *
+		        FROM TB_WM_EVENTLOG
+		        WHERE EVENT_TYPE = 1
+				AND EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+		    	AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS') ) N
+		    WHERE M.EVENT_ID = N.EVENT_ID
+		    AND (M.EVENT_SOURCEID, M.EVENT_VSTYPE, M.EVENT_ID, M.EVENT_TYPE) IN (
+		        SELECT
+		            EVENT_SOURCEID,
+		            EVENT_VSTYPE,
+		            EVENT_ID,
+		            MAX(EVENT_TYPE) AS EVENT_TYPE
+		        FROM TB_WM_EVENTLOG
+		        WHERE (EVENT_SOURCEID, EVENT_VSTYPE, EVENT_ID) IN (
+		            SELECT EVENT_SOURCEID, EVENT_VSTYPE, MAX(EVENT_ID) AS EVENT_ID
+		            FROM TB_WM_EVENTLOG
+		            WHERE EVENT_VSTYPE = #{eventVsTypeStr}
+					AND EVENT_DT &gt;= TO_DATE(#{searchFromDt}, 'YYYY-MM-DD HH24:MI:SS') 
+			    	AND EVENT_DT &lt;= TO_DATE(#{searchToDt}, 'YYYY-MM-DD HH24:MI:SS')
+		            GROUP BY EVENT_SOURCEID, EVENT_VSTYPE)
+		        GROUP BY EVENT_SOURCEID, EVENT_VSTYPE, EVENT_ID) ) K,
+		    TB_WM_MAPPING360IO I
+		WHERE I.USE_YN = 'Y'
+		AND I.CSCT_CD = K.EVENT_SOURCEID(+)
+		ORDER BY I.CSCT_CD, K.EVENT_SOURCEID, K.EVENT_VSTYPE
+	</select>
+	
+</mapper>

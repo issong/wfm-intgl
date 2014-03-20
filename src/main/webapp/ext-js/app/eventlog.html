@@ -1,0 +1,415 @@
+<script type="text/javascript">
+
+    Ext.define('Intgl.app.EventLog', {
+        extend: 'Ext.panel.Panel',
+        alias: 'widget.eventlog',
+
+        initComponent: function() {
+            var me = this;
+
+            var dateStore = Ext.create('Ext.data.Store', {
+                storeId: 'dateStore',
+                fields: ['eventDtStr'],
+                proxy: {
+                    type: 'ajax',
+                    url: '/wfm-intgl/intgl/event/getEventLogDate.json',
+                    reader: {
+                        type: 'json',
+                        root: 'items'
+                    }
+                }
+                //, autoLoad: true
+            });
+            
+            var listStore = Ext.create('Ext.data.Store', {
+                //storeId: 'listStore',
+                pageSize: 12,
+                fields: ['eventId','eventSender','eventReceiver','eventVsTypeStr','eventSourceId','eventTypeStr','eventClass','eventMethod','eventStatusStr','eventRoute','eventMsg','eventDtStr','eventIp','eventHostIp','eventHostName','eventDataSize']
+            });
+
+            var msgStore = Ext.create('Ext.data.Store', {
+                //storeId: 'msgStore',
+                fields: ['eventDetailMsg']
+            });
+
+            var datePanel = Ext.create('Ext.grid.Panel', {
+                //id : 'date-panel',
+                title: 'Log Date',
+                region: 'west',
+                split: true,
+                autoScroll: true,
+                store: dateStore,
+                columns: [
+                    { text: 'DATE',  dataIndex: 'eventDtStr' }
+                ],
+                height: '100%',
+                width: 100
+            });
+            
+            datePanel.getSelectionModel().on('select', function(selModel, record, index, eOpts) {
+                var dataModel = dateStore.getAt(index);
+                listPanel.down("#searchFromDt").setValue(dataModel.get("eventDtStr"));
+                listPanel.down("#searchFromTm").setValue('00:00:00');
+                //listPanel.down("#searchToDt").setValue(dataModel.get("eventDtStr"));
+                listPanel.down("#searchToTm").setValue('23:59:59');
+
+                searchList(1);
+            });
+
+            var searchList = function(page) {
+                var searchFromDt = listPanel.down("#searchFromDt").getRawValue();
+                var searchFromTm = listPanel.down("#searchFromTm").getRawValue();
+                //var searchToDt = listPanel.down("#searchToDt").getRawValue();
+                var searchToDt = listPanel.down("#searchFromDt").getRawValue();
+                var searchToTm = listPanel.down("#searchToTm").getRawValue();
+                var eventId = listPanel.down("#eventId").getValue();
+                var eventSourceId = listPanel.down("#eventSourceId").getValue();
+                var vsType = listPanel.down("#vsType").getValue();
+                var eventType = listPanel.down("#eventType").getValue();
+                var eventStatus = listPanel.down("#eventStatus").getValue();
+                var eventMsg = listPanel.down("#eventMsg").getValue();
+                
+                var proxy = new Ext.data.proxy.Ajax({
+                    pageSize: 12,
+                    type: 'pagingmemory',
+                    url: '/wfm-intgl/intgl/event/getEventLogList.json?searchFromDt=' + searchFromDt + '&searchFromTm=' + searchFromTm + '&searchToDt=' + searchToDt + '&searchToTm=' + searchToTm + '&eventId=' + eventId + '&eventSourceId=' + eventSourceId + '&vsType=' + vsType + '&eventType=' + eventType + '&eventStatus=' + eventStatus + '&eventMsg=' + eventMsg,
+                    reader: {
+                        type: 'json',
+                        root: 'items',
+                        totalProperty: 'totalPage'
+                    }
+                });
+                me.down('#content-panel').body.update('');
+                listStore.removeAll(false);
+                listStore.setProxy(proxy);
+                listStore.loadPage(page);
+            };
+            
+            var listPanel = Ext.create('Ext.grid.Panel', {
+                itemId : 'list-panel',
+                title: 'Log List',
+                region: 'north',
+                split: true,
+                autoScroll: true,
+                store: listStore,
+                columns: [
+                    {text: 'EVENT_ID', dataIndex: 'eventId', width: 60 },
+                    {text: 'SENDER', dataIndex: 'eventSender', width: 60 },
+                    {text: 'RECEIVER', dataIndex: 'eventReceiver', width: 60 },
+                    {text: 'VSTYPE', dataIndex: 'eventVsTypeStr', width: 60 },
+                    {text: 'SOURCEID', dataIndex: 'eventSourceId', width: 60 },
+                    {text: 'EVENT_TYPE', dataIndex: 'eventTypeStr', renderer: me.typeChange },
+                    {text: 'EVENT_CLASS', dataIndex: 'eventClass', width: 180 },
+                    {text: 'EVENT_METHOD', dataIndex: 'eventMethod', width: 150 },
+                    {text: 'EVENT_STATUS', dataIndex: 'eventStatusStr', renderer: me.statusChange },
+                    {text: 'EVENT_ROUTE', dataIndex: 'eventRoute' },
+                    {text: 'EVENT_MSG', dataIndex: 'eventMsg', width: 230 },
+                    {text: 'EVENT_DT', dataIndex: 'eventDtStr', width: 140 },
+                    {text: 'EVENT_IP', dataIndex: 'eventIp' },
+                    {text: 'EVENT_HOST_IP', dataIndex: 'eventHostIp' },
+                    {text: 'EVENT_HOST_NAME', dataIndex: 'eventHostName', width: 140 } 
+                ],
+                height: 350,
+                width: '100%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        Ext.create('Ext.Action',{
+                            text: 'Refresh',
+                            handler: function() {
+                            	searchList(1);
+                            },
+                            iconCls: 'refreshButton'
+                        }),{
+                            xtype: 'label',
+                            text: '조회일시 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'datefield',
+                            itemId: 'searchFromDt',
+                            width: 95,
+                            format: 'Y-m-d',
+                            value: new Date()
+                        },{
+                            xtype: 'timefield',
+                            itemId: 'searchFromTm',
+                            width: 80,
+                            increment: 5,
+                            format: 'H:i:s',
+                            value: new Date((new Date()).getTime() - 60*60*1000)
+                        },{
+                            xtype: 'label',
+                            text: ' ~ ',
+                            margin: '0 0 0 0'
+                        },
+                        /*{
+                            xtype: 'datefield',
+                            itemId: 'searchToDt',
+                            width: 95,
+                            format: 'Y-m-d',
+                            value: new Date()
+                        },*/
+                        {
+                            xtype: 'timefield',
+                            itemId: 'searchToTm',
+                            increment: 5,
+                            width: 80,
+                            format: 'H:i:s',
+                            value: new Date()
+                        },{
+                            xtype: 'label',
+                            text: '이벤트ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventId',
+                            width: 60
+                        },{
+                            xtype: 'label',
+                            text: 'CSCT_ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventSourceId',
+                            width: 60
+                        },{
+                            xtype: 'label',
+                            text: 'VS시나리오 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'combo',
+                            itemId: 'vsType',
+                            editable: false,
+                            forceSelection: true,
+                            width: 70,
+                            matchFieldWidth: false,
+                            queryMode: 'local',
+                            displayField: 'name',
+                            valueField: 'abbr',
+                            store: {
+                                fields: ['abbr', 'name'],
+                                data: [
+                                    {'abbr':'A',     'name':'전체'},
+                                    {'abbr':'VS1',   'name':'[VS1] Initial Load(Start of Day)'},
+                                    {'abbr':'VS2',   'name':'[VS2] Assignments returned to NeOSS'},
+                                    {'abbr':'VS3',   'name':'[VS3] Task Status Updates'},
+                                    {'abbr':'VS3A',  'name':'[VS3A] Task Status Updates'},
+                                    {'abbr':'VS4',   'name':'[VS4] Task Status Updates'},
+                                    {'abbr':'VS5',   'name':'[VS5] Arrival of New Work for Execution on Current Day'},
+                                    {'abbr':'VS6',   'name':'[VS6] VS6_Making an appointment'},
+                                    {'abbr':'VS6A',  'name':'[VS6A] Making an appointment (Offers returned)'},
+                                    {'abbr':'VS6B',  'name':'[VS6B] Making an appointment (Offers Rejected)'},
+                                    {'abbr':'VS6C',  'name':'[VS6C] Making an appointment (Offers accepted)'},
+                                    {'abbr':'VS6D',  'name':'[VS6D] Work Cancelled by ICIS/NEOSSWM'},
+                                    {'abbr':'VS7',   'name':'[VS7] Manual allocation using  iSWB'},
+                                    {'abbr':'VS7A',  'name':'[VS7A] Manual allocation using NeOSS WM'},
+                                    {'abbr':'VS7B',  'name':'[VS7B] Manual allocation using NeOSS WM'},
+                                    {'abbr':'VS7C',  'name':'[VS7C] Manual allocation using NeOSS WM'},
+                                    {'abbr':'VS8',   'name':'[VS8] Work Cancelled by NeOSS WM'},
+                                    {'abbr':'VS10',  'name':'[VS10] Work Modification by NeOSS WM'},
+                                    {'abbr':'VS12',  'name':'[VS12] 360 Heartbeat from NeOSS WM'},
+                                    {'abbr':'VS14',  'name':'[VS14] Resource Changed by NeOSS WM'},
+                                    {'abbr':'VS14A', 'name':'[VS14A] Reource Deleted by NeOSS WM'},
+                                    {'abbr':'VS14B', 'name':'[VS14B] Reource Confirm by NeOSS WM'},
+                                    {'abbr':'VS14C', 'name':'[VS14C] Worker service info from NeOSS'},
+                                    {'abbr':'VS14D', 'name':'[VS14D] Worker info add from NeOSS'},
+                                    {'abbr':'VS15A', 'name':'[VS15A] remove User Info'},
+                                    {'abbr':'VS15D', 'name':'[VS15D] add, change User Info'},
+                                    {'abbr':'VS16',  'name':'[VS16] add ARP data'},
+                                    {'abbr':'VS16A', 'name':'[VS16A] remove ARP data'},
+                                    {'abbr':'VS20',  'name':'[VS20] Task Status Updates'},
+                                    {'abbr':'VS90',  'name':'[VS90] Raise Custom Excpetion by NeOSS WM'},
+                                    {'abbr':'VS91',  'name':'[VS91] Remove Custom Exception by NeOSS WM'}
+                                ]
+                            },
+                            listeners: {
+                                afterrender: function(component, eOpts) {
+                                    component.setValue('A');
+                                }
+                            }
+                        },{
+                            xtype: 'label',
+                            text: '이벤트타입 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'combo',
+                            itemId: 'eventType',
+                            editable: false,
+                            forceSelection: true,
+                            width: 70,
+                            matchFieldWidth: false,
+                            queryMode: 'local',
+                            displayField: 'name',
+                            valueField: 'abbr',
+                            store: {
+                                fields: ['abbr', 'name'],
+                                data: [
+                                    {'abbr':'A',   'name':'전체'},
+                                    {'abbr':'1',   'name':'[1] receive'},
+                                    {'abbr':'2',   'name':'[2] enqueue'},
+                                    {'abbr':'3',   'name':'[3] dequeue'},
+                                    {'abbr':'4',   'name':'[4] start mapping'},
+                                    {'abbr':'5',   'name':'[5] end mapping'},
+                                    {'abbr':'6',   'name':'[6] send(complete)'},
+                                    {'abbr':'7',   'name':'[7] response(complete)'}
+                                ]
+                            },
+                            listeners: {
+                                afterrender: function(component, eOpts) {
+                                    component.setValue('A');
+                                }
+                            }
+                        },{
+                            xtype: 'label',
+                            text: '이벤트상태 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'combo',
+                            itemId: 'eventStatus',
+                            editable: false,
+                            forceSelection: true,
+                            width: 70,
+                            queryMode: 'local',
+                            displayField: 'name',
+                            valueField: 'abbr',
+                            store: {
+                                fields: ['abbr', 'name'],
+                                data: [
+                                    {'abbr':'A', 'name':'전체'},
+                                    {'abbr':'S', 'name':'성공'},
+                                    {'abbr':'F', 'name':'실패'}
+                                ]
+                            },
+                            listeners: {
+                                afterrender: function(component, eOpts) {
+                                    component.setValue('A');
+                                }
+                            }
+                        },{
+                            xtype: 'label',
+                            text: '상세메시지 : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'eventMsg'
+                        }]
+                },
+                bbar: Ext.create('Ext.PagingToolbar', {
+                    pageSize: 12,
+                    store: listStore,
+                    displayInfo: true,
+                    plugins: Ext.create('Ext.ux.SlidingPager', {})
+                }),
+                listeners: {
+                    itemdblclick: function(view, record, item, index, e, eOpts) {
+                    	if (record.get('eventMsg').trim().length > 0)
+                        	Ext.Msg.alert('EVENT_MSG', '<pre>'+record.get('eventMsg')+'</pre>');
+                    }
+                }
+            });
+
+            listPanel.getSelectionModel().on('select', function(selModel, record, index, eOpts) {
+                var dataModel = listStore.getAt(index);
+                var proxy = new Ext.data.proxy.Ajax({
+                    type: 'direct',
+                    url: '/wfm-intgl/intgl/event/getEventLogDetail.json?eventId=' + dataModel.get("eventId") + '&eventType=' + dataModel.get("eventTypeStr") + '&eventMsg=' + listPanel.down("#eventMsg").getValue(),
+                    reader: {
+                        type: 'json',
+                        root: 'items'
+                    }
+                });
+                msgStore.setProxy(proxy);
+                msgStore.load(function(records, operation, success) {
+                    var bd = me.down('#content-panel').body;
+                    var msg = msgStore.getAt(0).get("eventDetailMsg");
+                    console.log(msg);
+                    //if (listPanel.down("#eventMsg").getValue() != '') {
+                    //	msg = msg.replace(listPanel.down("#eventMsg").getValue(), '<font color=red>' + listPanel.down("#eventMsg").getValue() + '</font>');
+                    //}
+                    //bd.update(msg);
+                    bd.update(msgStore.getAt(0).get("eventDetailMsg"));
+                });
+            });
+
+            var contentPanel = {
+                itemId: 'content-panel',
+                title: 'Log Detail',
+                region: 'center', // this is what makes this panel into a region within the containing layout
+                layout: 'card',
+                activeItem: 0,
+                split: true,
+                autoScroll: true,
+                border: true,
+                html: ''
+            };    
+
+            Ext.apply(me, {
+                layout: 'border',
+                items: [
+                //datePanel,
+                {
+                    layout: 'border',
+                    //id: 'layout-browser',
+                    region:'center',
+                    border: false,
+                    split:true,
+                    margins: '0 0 0 0',
+                    width: '100%',
+                    height: '100%',
+                    items: [listPanel, contentPanel]
+                }],
+            });
+            me.callParent(arguments);
+        },
+
+        typeChange: function(val) {
+            switch (val) {
+                case '1':
+                    return '[1] receive';
+                case '2':
+                    return '[2] enqueue';
+                case '3':
+                    return '[3] dequeue';
+                case '4':
+                    return '[4] start mapping';
+                case '5':
+                    return '[5] end mapping';
+                case '6':
+                    return '[6] send(complete)';
+                case '7':
+                    return '[7] response(complete)';
+                default:
+                    return val;
+            }
+        },
+        
+        statusChange: function(val) {
+            switch (val) {
+                case '0':
+                    return '[0] 정상';
+                case '1':
+                    return '[1] 타입체크오류';
+                case '2':
+                    return '[2] JMS오류';
+                case '3':
+                    return '[3] 데이터변환오류';
+                case '4':
+                    return '[4] 타켓전송오류';
+                case '5':
+                    return '[5] 타켓처리오류';
+                case '6':
+                    return '[6] 재처리실패';
+                case '7':
+                    return '[7] 재처리성공';
+                case '99':
+                    return '[99] 기타오류';
+                default:
+                    return val;
+            }
+        }
+    });
+
+    Ext.getCmp("app-main").getActiveTab().add(Ext.create('widget.eventlog'));
+
+</script>

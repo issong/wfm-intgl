@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/task
+						http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+
+	<!-- References: 
+		Task Scheduling Simplifications in Spring 3.0 
+		- http://blog.springsource.com/2010/01/05/task-scheduling-simplifications-in-spring-3-0/ 
+		Spring Framework 3 Reference; 
+		- http://static.springsource.org/spring/docs/3.0.x/spring-framework-reference/html/scheduling.html -->
+		
+	<task:scheduled-tasks scheduler="taskScheduler">
+		<task:scheduled ref="DayBreakBatch" method="executeBatchVS1" cron="0 0 5 * * *" />
+		<task:scheduled ref="DayBreakBatch" method="executeBatchVS14B" cron="0 30 7 * * *" />
+		<task:scheduled ref="DayBreakBatch" method="executeBatchVS14C" cron="0 0 4 * * *" />
+		 
+		<!-- test -->
+		<!-- 
+		<task:scheduled ref="DayBreakBatch" method="executeBatchVS1" cron="0 50 10 * * *" />
+		<task:scheduled ref="DayBreakBatch" method="executeBatchVS14B" cron="0 51 10 * * *" />
+		<task:scheduled ref="DayBreakBatch" method="executeBatchVS14C" cron="0 52 10 * * *" />
+		 -->
+	</task:scheduled-tasks>
+
+	<!-- The bean that does the actual work -->
+	<bean id="DayBreakBatch" class="com.kt.oss.wmIntgl.eventhandler.batch.EventDayBreakBatch" />
+
+	<!-- Defines a ThreadPoolTaskScheduler instance with configurable pool size. -->
+	<task:scheduler id="taskScheduler" pool-size="1" />
+
+</beans>

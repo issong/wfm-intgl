@@ -1,0 +1,85 @@
+//created on: 2012. 10. 15
+package com.kt.oss.wmIntgl.datamapper.service.rules.mapper
+
+import com.kt.oss.wmIntgl.common.constants.ScenarioType;
+import com.kt.oss.wmIntgl.common.utils.StringUtil;
+import com.kt.oss.wmIntgl.datahandler.domain.WMResourceInfo;
+import com.kt.oss.wmIntgl.datahandler.domain.IntglDataVo;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesDB;
+import com.kt.oss.wmIntgl.datamapper.service.rules.core.RulesVo;
+import com._360scheduling.schema.dsmodelling.DsModelling.RAMResource;
+
+// vstype == 14 이면
+// id : [workerId] 매핑
+// ram_resource_class_id : Default 값으로 'PERSON' 설정
+// ram_resource_type_id : [companyTypeCode] 매핑
+// ram_location_id_start : 쿼리 결과의 [RAM_LOCATION_ID_START] 매핑-> 쿼리 결과가 없을 경우 [startOfficeScode] 매핑
+// ram_location_id_end : 쿼리 결과의 [RAM_LOCATION_ID_END] 매핑-> 쿼리 결과가 없을 경우 [endOfficeScode] 매핑
+// ram_rule_collection_id : 쿼리 결과의 [RAM_RULE_COLLECTION_ID] 매핑-> 쿼리 결과가 없을 경우 Default 값으로 'KT_0' 설정
+// cost_km : 쿼리 결과의 [COST_KM] 매핑-> 쿼리 결과가 없을 경우 Default 값으로 30 설정
+// utilisation : 쿼리 결과의 [UTILISATION] 매핑-> 쿼리 결과가 없을 경우 Default 값으로 100 설정
+// out_of_region_multiplier : 쿼리 결과의 [OUT_OF_REGION_MULTIPLIER] 매핑->쿼리 결과가 없을 경우 Default 값으로 0 설정
+// first_name : [workerFirstName] 매핑
+// surname : 국사코드 lookup table[TB_WM_MAPPINGOFFICE]에서 [startOfficeScode]를 key로 국사명 매핑
+// description : [description] 매핑
+// contact_details : [contactDetails] 매핑
+// memo : [grade]로 TB_WM_MAPPINGWORKERGRADE 테이블을 조회하여  [GDR_NM] 컬럼을 매핑
+rule "VS14_RAMResource"
+	dialect "java"
+	no-loop
+	when
+		order : WMResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14)
+		rulesDB : RulesDB()
+		rulesVo : RulesVo()
+		ramResource : RAMResource()
+	then
+		ramResource.setId(order.getWorkerId());
+		ramResource.setRamResourceClassId("PERSON");
+		ramResource.setRamResourceTypeId(order.getCompanyTypeCode());
+		ramResource.setRamLocationIdStart(rulesVo.getRamLocationIdStart());
+		ramResource.setRamLocationIdEnd(rulesVo.getRamLocationIdEnd());
+		ramResource.setRamRuleCollectionId(rulesVo.getRamRuleCollectionId());
+		ramResource.setCostKm(rulesVo.getCostKm());
+		ramResource.setUtilisation(rulesVo.getUtilisation());
+		ramResource.setOutOfRegionMultiplier(rulesVo.getOutOfRegionMultiplier());
+		ramResource.setFirstName(order.getWorkerFirstName());
+		ramResource.setSurname(rulesDB.selectOfficeName(order.getStartOfficeScode()));
+		ramResource.setDescription(order.getDescription());
+		ramResource.setContactDetails(order.getContactDetails());
+		ramResource.setMemo(rulesDB.selectGradeName(order.getGrade()));
+        update(ramResource);
+end
+
+// vstype == 14D 이면
+// id : [workerId] 매핑
+// ram_resource_class_id : Default 값으로 'PERSON' 설정
+// ram_resource_type_id : [companyTypeCode] 매핑
+// ram_location_id_start : [startOfficeScode] 매핑
+// ram_location_id_end : [endOfficeScode] 매핑
+// first_name : [workerFirstName] 매핑
+// surname : 국사코드 lookup table[TB_WM_MAPPINGOFFICE]에서 [startOfficeScode]를 key로 국사명 매핑
+// description : [description] 매핑
+// contact_details : [contactDetails] 매핑
+// memo : [grade]로 TB_WM_MAPPINGWORKERGRADE 테이블을 조회하여  [GDR_NM] 컬럼을 매핑
+rule "VS14D_RAMResource"
+	dialect "java"
+	no-loop
+	when
+		order : WMResourceInfo()
+		intglVo : IntglDataVo(vsType == ScenarioType.VS14D)
+		rulesDB : RulesDB()
+		ramResource : RAMResource()
+	then
+		ramResource.setId(order.getWorkerId());
+		ramResource.setRamResourceClassId("PERSON");
+		ramResource.setRamResourceTypeId(order.getCompanyTypeCode());
+		ramResource.setRamLocationIdStart(order.getStartOfficeScode());
+		ramResource.setRamLocationIdEnd(order.getEndOfficeScode());
+		ramResource.setFirstName(order.getWorkerFirstName());
+		ramResource.setSurname(rulesDB.selectOfficeName(order.getStartOfficeScode()));
+		ramResource.setDescription(order.getDescription());
+		ramResource.setContactDetails(order.getContactDetails());
+		ramResource.setMemo(rulesDB.selectGradeName(order.getGrade()));
+        update(ramResource);
+end

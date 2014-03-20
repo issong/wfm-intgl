@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.oss.wmIntgl.integration.intgl2scheduler.dao.Intgl2SchedulerDao" >
+
+  <!-- 
+    - 국사의 CSCTID 에 맵핑되는 360 IO 서버의 IP 를 가져옵니다.
+    -->
+  <select id="select360IoServerIp" parameterType="WMMapping360IoVo" resultType="WMMapping360IoVo">
+		SELECT 
+		    CSCT_CD AS CSCTCD
+		    , ENV_TYPE AS ENVTYPE
+		    , THREESIXTYIOSERVER_IP AS THREESIXTYIOSERVERIP 
+		FROM TB_WM_MAPPING360IO
+		WHERE 
+			CSCT_CD = #{searchCsctCd}
+			AND ENV_TYPE = #{searchEnvType}
+			AND ROWNUM = 1
+  </select>
+  
+</mapper>
+
+

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                           http://www.springframework.org/schema/context 
+                           http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+<!-- 	<context:component-scan base-package="com.kt.framework.mail"/>
+
+	<context:property-placeholder location="classpath:/properties/config.properties"/>
+
+	<bean id="velocityEngine" class="org.springframework.ui.velocity.VelocityEngineFactoryBean"
+	      p:resourceLoaderPath="classpath:/properties"
+	      p:preferFileSystemAccess="false"/>
+
+	<bean id="mailSender" class="com.kt.framework.mail.CryptJavaMailSenderImpl"
+	      p:host="${mail.host}"
+	      p:username="${mail.userName}"
+	      p:password="${mail.password}">
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.auth">true</prop>
+				<prop key="mail.smtp.starttls.enable">true</prop>
+				<prop key="mail.crypto.public.key.path">${mail.crypto.public.key.path}</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="mailMessage" class="org.springframework.mail.SimpleMailMessage"
+	      p:from="${mail.from}"
+	      p:to="${mail.to}"
+	      p:subject="Mail Test"/> -->
+<!-- 	<context:component-scan base-package="com.kt.framework.mail"/> -->
+
+	<!-- Edit 'mail.properties' to set a valid user and password for the mail sender. -->
+	<!--  
+	<context:property-placeholder location="classpath:properties/config.properties"/>
+	-->
+	<!-- Mail Message -->
+	<bean id="mailMessage" class="org.springframework.mail.SimpleMailMessage"
+	      p:from="${mail.from}"
+	      p:to="${mail.to}"
+	      p:subject="Mail Test" scope="prototype"/>
+	      
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	    <property name="host" value="${mail.host}" />
+	    <property name="protocol" value="smtp" />  
+	    <property name="username" value="${mail.userName}" />     
+	    <property name="password" value="${mail.password}" /> 
+    	<!-- <property name="port" value="${mail.tls_starttls.port}" /> -->    
+    	<property name="port" value="${mail.ssl.port}" /> 
+    	<property name="javaMailProperties">     
+    	<props>         
+    		<prop key="mail.smtps.auth">true</prop> 
+<!--     		<prop key="mail.smtp.starttls.enable">true</prop> -->
+    		<prop key="mail.transport.protocol">smtps</prop> 
+			<prop key="mail.smtp.ssl.enable">true</prop>
+    	</props>     
+    	</property> 
+    </bean> 	      
+
+</beans>

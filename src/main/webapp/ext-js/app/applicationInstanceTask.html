@@ -1,0 +1,304 @@
+<script type="text/javascript">
+
+    var appterm = 10;
+    //var interval = 10000;
+    var appintervalRun;
+    var appintervalPressed = false;
+
+    Ext.define('applicationInstanceTaskModel', {
+        extend: 'Ext.data.Model',
+        fields: [{
+            name: 'applicationInstanceId',
+            type: 'string'
+        }, {
+            name: 'organisationId',
+            type: 'string'
+        }, {
+            name: 'externalTaskId',
+            type: 'string'
+        }, {
+            name: 'applicationTypeId',
+            type: 'string'
+        }, {
+            name: 'manuallyAssigned',
+            type: 'string'
+        }, {
+            name: 'externalDatabaseId',
+            type: 'string'
+        }, {
+            name: 'searchApplicationInstanceId',
+            type: 'string'
+        }, {
+            name: 'searchExternalTaskId',
+            type: 'string'
+        }, {
+            name: 'searchApplicationTypeId',
+            type: 'string'
+        }]
+    });
+  
+    var applistStore = Ext.create('Ext.data.Store', {
+        storeId: 'applistStore',
+        model: applicationInstanceTaskModel,
+        groupField: 'applicationInstanceId',
+        sorters: ['applicationInstanceId'],        
+        proxy: {
+            type: 'ajax',
+            url: '/wfm-intgl/intgl/event/getApplicationInstanceTaskList.json',
+            reader: {
+                type: 'json',
+                root: 'data'
+            }
+        },        
+        autoLoad: true
+    });
+
+    var apprefreshTask = {
+        run: function(){
+            console.log("apprefreshTask run");
+            Ext.StoreMgr.get('applistStore').reload();
+        },
+        interval: 10000
+    };    
+
+    Ext.define('Intgl.app.ApplicationInstanceTask', {
+        extend: 'Ext.panel.Panel',
+        alias: 'widget.applicationInstanceTask',
+
+        initComponent: function() {
+            var me = this;
+
+            var groupingFeature = Ext.create('Ext.grid.feature.Grouping', {
+                    groupHeaderTpl: '{columnName} : {name} ({rows.length} Item{[values.rows.length > 1 ? "s" : ""]})',
+                    hideGroupedHeader: true,
+                    startCollapsed: true,
+                    id: 'restaurantGrouping'
+                }),
+                groups = applistStore.getGroups(),
+                len = groups.length, i = 0,
+                toggleMenu = [],
+                toggleGroup = function(item) {
+                    var groupName = item.text;
+                    if (item.checked) {
+                        groupingFeature.expand(groupName, true);
+                    } else {
+                        groupingFeature.collapse(groupName, true);
+                    }
+                };
+
+            // Create checkbox menu items to toggle associated groupd
+            for (; i < len; i++) {
+                toggleMenu[i] = {
+                    xtype: 'menucheckitem',
+                    text: groups[i].name,
+                    handler: toggleGroup
+                }
+            };            
+            
+            var listPanel = Ext.create('Ext.grid.Panel', {
+                title: false,
+                region: 'center',
+                activeItem: 0,
+                split: true,
+                columnLines: true,
+                autoScroll: true,
+                store: applistStore,
+                features: [groupingFeature],
+                tbar: [
+                {
+                    xtype : 'button',
+                    text: 'Grouping Enable', 
+                    itemId: 'grpBtn',
+                    enableToggle: true, 
+                    pressed: true,
+                    listeners: {
+                        toggle: function( thisObj, pressed, eOpts ) {
+                            if(pressed) {
+                                //console.log(me.down("#rgGrp").getValue().rb);
+                                Ext.StoreMgr.get('applistStore').group(me.down("#rgGrp").getValue().rb);
+                                groupingFeature.enable();
+                            }else{
+                                groupingFeature.disable();
+                            }
+                        }
+                    }
+                },
+                {
+                    xtype      : 'radiogroup',
+                    itemId     : 'rgGrp',
+                    fieldLabel : '',
+                    defaults: {
+                        width: 120,
+                    },
+                    layout: 'hbox',
+                    items: [
+                        { boxLabel: 'INSTANCE ID', name: 'rb', inputValue: 'applicationInstanceId', checked: true },
+                        { boxLabel: 'TASK ID', name: 'rb', inputValue: 'externalTaskId'},
+                        { boxLabel: 'TYPE ID', name: 'rb', inputValue: 'applicationTypeId' },
+                    ],
+                    listeners: {
+                        change : function(thisFormField, newValue, oldValue, eOpts) {
+                            if(!me.down('#grpBtn').pressed) return;
+                            Ext.StoreMgr.get('applistStore').group(newValue.rb);
+                        }                        
+                    }
+
+                }],             
+                columns: [
+                    {text: 'INSTANCE ID', dataIndex: 'applicationInstanceId', width: 200, align: 'center'},
+                    {text: 'ORGANISATION ID', dataIndex: 'organisationId', width: 140, align: 'center' },
+                    {text: 'TASK ID', dataIndex: 'externalTaskId', width: 140, align: 'center' },
+                    {text: 'MANUALLY ASSIGNED', dataIndex: 'manuallyAssigned', width: 140, align: 'center' },
+                    {text: 'DATABASE ID', dataIndex: 'externalDatabaseId', width: 140, align: 'center' },
+                    {text: 'TYPE ID', dataIndex: 'applicationTypeId', width: 140, align: 'center'}
+                ],
+                height: '100%',
+                width: '100%',
+                dockedItems: {
+                    itemId: 'toolbar',
+                    xtype: 'toolbar',
+                    items: [
+                        Ext.create('Ext.Action',{
+                            text: 'Refresh',
+                            handler: function() {
+                                me.reload();
+                            },
+                            iconCls: 'refreshButton'
+                        }),
+                        /*
+                        Ext.create('Ext.Action',{
+                            text: 'Auto Refresh',
+                            enableToggle: true,
+                            toggleHandler: me.onItemToggle,
+                            pressed: false,
+                            iconCls: 'processButton'
+                        }),{
+                            xtype: 'label',
+                            text: '반복(초) :',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'numberfield',
+                            name: 'basic',
+                            value: 10,
+                            minValue: 1,
+                            maxValue: 999,
+                            step: 1,
+                            width: 50,
+                            keyNavEnabled: true,
+                            listeners: {
+                                change: function(field, value) {
+                                    value = parseInt(value, 10);
+                                    field.setValue(value);
+                                    apprefreshTask.interval = value * 1000;
+                                    if (appintervalPressed) {
+                                        me.onItemToggle(null, false);
+                                        me.onItemToggle(null, true);
+                                    }
+                                }
+                            }
+                        },
+                        */
+                        {
+                            xtype: 'label',
+                            text: 'INSTANCE ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'searchApplicationInstanceId',
+                            enableKeyEvents: true,
+                            width: 150,
+                            listeners: {
+                                keydown: function( thisObj, e, eOpts ) {
+                                    if(e.keyCode == 13) {
+                                        me.reload();
+                                    }
+                                }
+                            }
+                        },{
+                            xtype: 'label',
+                            text: 'TASK ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'searchExternalTaskId',
+                            enableKeyEvents: true,
+                            width: 120,
+                            listeners: {
+                                keydown: function( thisObj, e, eOpts ) {
+                                    if(e.keyCode == 13) {
+                                        me.reload();
+                                    }
+                                }
+                            }                            
+                        },{
+                            xtype: 'label',
+                            text: 'TYPE ID : ',
+                            margin: '0 0 0 8'
+                        },{
+                            xtype: 'textfield',
+                            itemId: 'searchApplicationTypeId',
+                            enableKeyEvents: true,
+                            width: 120,
+                            listeners: {
+                                keydown: function( thisObj, e, eOpts ) {
+                                    if(e.keyCode == 13) {
+                                        me.reload();
+                                    }
+                                }
+                            }                            
+                        }
+                    ]
+                },
+                listeners: {
+                }
+            });
+
+            Ext.apply(me, {
+                layout: 'border',
+                items: [
+                    listPanel
+                ],
+            });
+            me.callParent(arguments);
+        },
+        onItemToggle: function(item, pressed){
+            if (item != null)
+                appintervalPressed = pressed;
+
+            console.log("intervalPressed=" + appintervalPressed);
+            console.log("interval=" + apprefreshTask.interval);
+
+            try {
+                if (pressed) {
+                    Ext.TaskManager.start(apprefreshTask);
+                } else {
+                    Ext.TaskManager.stop(apprefreshTask);
+                }
+            } catch(e) {}
+        },
+        reload: function() {
+            applistStore.reload({params: {
+                searchApplicationInstanceId: this.down("#searchApplicationInstanceId").getValue()
+                , searchExternalTaskId: this.down("#searchExternalTaskId").getValue()
+                , searchApplicationTypeId: this.down("#searchApplicationTypeId").getValue()}
+            });            
+        }     
+
+    });
+
+    Ext.getCmp("app-main").getActiveTab().add(Ext.create('widget.applicationInstanceTask'));
+
+
+    Ext.getCmp("app-main").on('tabchange', function(panel, newTab, oldTab) {
+        console.log(newTab.title + " tabchange");
+
+        if(newTab.title && newTab.title == "360 INSTANCE TASK 조회") {
+            if(appintervalPressed) {
+                Ext.TaskManager.start(apprefreshTask);
+            }
+        }else{
+            Ext.TaskManager.stop(apprefreshTask);
+        }
+    });
+
+</script>
