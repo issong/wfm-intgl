@@ -4,7 +4,7 @@
   <groupId>com.kt.oss.wm.intgl</groupId>
   <artifactId>wfm-intgl</artifactId>
   <packaging>war</packaging>
-  <version>1.5</version>
+  <version>1.0.0</version>
   <name>Integration Layer Service</name>
   <url>http://maven.apache.org</url>
   
